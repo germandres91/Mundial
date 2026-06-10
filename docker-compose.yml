@@ -1,0 +1,53 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: mundial_postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-mundial}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-mundial}
+      POSTGRES_DB: ${POSTGRES_DB:-mundial}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-mundial}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build: ./backend
+    container_name: mundial_backend
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      ENVIRONMENT: production
+      DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER:-mundial}:${POSTGRES_PASSWORD:-mundial}@postgres:5432/${POSTGRES_DB:-mundial}
+      FOOTBALL_PROVIDER: ${FOOTBALL_PROVIDER:-mock}
+      FOOTBALL_API_KEY: ${FOOTBALL_API_KEY:-}
+      SECRET_KEY: ${SECRET_KEY:-change-me-in-production}
+      SYNC_ENABLED: "true"
+      SYNC_INTERVAL_MINUTES: "5"
+      CORS_ORIGINS: "http://localhost:3000,http://localhost"
+    volumes:
+      - ./data:/app/data
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_URL: /api/v1
+    container_name: mundial_frontend
+    depends_on:
+      - backend
+    ports:
+      - "3000:80"
+    restart: unless-stopped
+
+volumes:
+  pgdata:

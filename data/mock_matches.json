@@ -1,0 +1,650 @@
+[
+  {
+    "fifa_id": "WC-A-1",
+    "grupo": "A",
+    "fase": "Fase de grupos",
+    "local": "México",
+    "visitante": "Sudáfrica",
+    "fecha": "2026-06-11T18:00:00+00:00",
+    "estado": "SCHEDULED"
+  },
+  {
+    "fifa_id": "WC-A-2",
+    "grupo": "A",
+    "fase": "Fase de grupos",
+    "local": "Rep. de Corea",
+    "visitante": "Rep. Checa",
+    "fecha": "2026-06-11T22:00:00+00:00",
+    "estado": "SCHEDULED"
+  },
+  {
+    "fifa_id": "WC-A-3",
+    "grupo": "A",
+    "fase": "Fase de grupos",
+    "local": "Rep. Checa",
+    "visitante": "Sudáfrica",
+    "fecha": "2026-06-12T02:00:00+00:00",
+    "estado": "SCHEDULED"
+  },
+  {
+    "fifa_id": "WC-A-4",
+    "grupo": "A",
+    "fase": "Fase de grupos",
+    "local": "México",
+    "visitante": "Rep. de Corea",
+    "fecha": "2026-06-12T06:00:00+00:00",
+    "estado": "SCHEDULED"
+  },
+  {
+    "fifa_id": "WC-A-5",
+    "grupo": "A",
+    "fase": "Fase de grupos",
+    "local": "Sudáfrica",
+    "visitante": "Rep. de Corea",
+    "fecha": "2026-06-12T10:00:00+00:00",
+    "estado": "SCHEDULED"
+  },
+  {
+    "fifa_id": "WC-A-6",
+    "grupo": "A",
+    "fase": "Fase de grupos",
+    "local": "Rep. Checa",
+    "visitante": "México",
+    "fecha": "2026-06-12T14:00:00+00:00",
+    "estado": "SCHEDULED"
+  },
+  {
+    "fifa_id": "WC-B-1",
+    "grupo": "B",
+    "fase": "Fase de grupos",
+    "local": "Canadá",
+    "visitante": "Bosnia / Herzegovina",
+    "fecha": "2026-06-12T18:00:00+00:00",
+    "estado": "SCHEDULED"
+  },
+  {
+    "fifa_id": "WC-B-2",
+    "grupo": "B",
+    "fase": "Fase de grupos",
+    "local": "Qatar",
+    "visitante": "Suiza",
+    "fecha": "2026-06-12T22:00:00+00:00",
+    "estado": "SCHEDULED"
+  },
+  {
+    "fifa_id": "WC-B-3",
+    "grupo": "B",
+    "fase": "Fase de grupos",
+    "local": "Suiza",
+    "visitante": "Bosnia / Herzegovina",
+    "fecha": "2026-06-13T02:00:00+00:00",
+    "estado": "SCHEDULED"
+  },
+  {
+    "fifa_id": "WC-B-4",
+    "grupo": "B",
+    "fase": "Fase de grupos",
+    "local": "Canadá",
+    "visitante": "Qatar",
+    "fecha": "2026-06-13T06:00:00+00:00",
+    "estado": "SCHEDULED"
+  },
+  {
+    "fifa_id": "WC-B-5",
+    "grupo": "B",
+    "fase": "Fase de grupos",
+    "local": "Suiza",
+    "visitante": "Canadá",
+    "fecha": "2026-06-13T10:00:00+00:00",
+    "estado": "SCHEDULED"
+  },
+  {
+    "fifa_id": "WC-B-6",
+    "grupo": "B",
+    "fase": "Fase de grupos",
+    "local": "Bosnia / Herzegovina",
+    "visitante": "Qatar",
+    "fecha": "2026-06-13T14:00:00+00:00",
+    "estado": "SCHEDULED"
+  },
+  {
+    "fifa_id": "WC-C-1",
+    "grupo": "C",
+    "fase": "Fase de grupos",
+    "local": "Brasil",
+    "visitante": "Marruecos",
+    "fecha": "2026-06-13T18:00:00+00:00",
+    "estado": "SCHEDULED"
+  },
+  {
+    "fifa_id": "WC-C-2",
+    "grupo": "C",
+    "fase": "Fase de grupos",
+    "local": "Haití",
+    "visitante": "Escocia",
+    "fecha": "2026-06-13T22:00:00+00:00",
+    "estado": "SCHEDULED"
+  },
+  {
+    "fifa_id": "WC-C-3",
+    "grupo": "C",
+    "fase": "Fase de grupos",
+    "local": "Escocia",
+    "visitante": "Marruecos",
+    "fecha": "2026-06-14T02:00:00+00:00",
+    "estado": "SCHEDULED"
+  },
+  {
+    "fifa_id": "WC-C-4",
+    "grupo": "C",
+    "fase": "Fase de grupos",
+    "local": "Brasil",
+    "visitante": "Haití",
+    "fecha": "2026-06-14T06:00:00+00:00",
+    "estado": "SCHEDULED"
+  },
+  {
+    "fifa_id": "WC-C-5",
+    "grupo": "C",
+    "fase": "Fase de grupos",
+    "local": "Marruecos",
+    "visitante": "Haití",
+    "fecha": "2026-06-14T10:00:00+00:00",
+    "estado": "SCHEDULED"
+  },
+  {
+    "fifa_id": "WC-C-6",
+    "grupo": "C",
+    "fase": "Fase de grupos",
+    "local": "Escocia",
+    "visitante": "Brasil",
+    "fecha": "2026-06-14T14:00:00+00:00",
+    "estado": "SCHEDULED"
+  },
+  {
+    "fifa_id": "WC-D-1",
+    "grupo": "D",
+    "fase": "Fase de grupos",
+    "local": "Estados Unidos",
+    "visitante": "Paraguay",
+    "fecha": "2026-06-14T18:00:00+00:00",
+    "estado": "SCHEDULED"
+  },
+  {
+    "fifa_id": "WC-D-2",
+    "grupo": "D",
+    "fase": "Fase de grupos",
+    "local": "Australia",
+    "visitante": "Turquía",
+    "fecha": "2026-06-14T22:00:00+00:00",
+    "estado": "SCHEDULED"
+  },
+  {
+    "fifa_id": "WC-D-3",
+    "grupo": "D",
+    "fase": "Fase de grupos",
+    "local": "Estados Unidos",
+    "visitante": "Australia",
+    "fecha": "2026-06-15T02:00:00+00:00",
+    "estado": "SCHEDULED"
+  },
+  {
+    "fifa_id": "WC-D-4",
+    "grupo": "D",
+    "fase": "Fase de grupos",
+    "local": "Turquía",
+    "visitante": "Paraguay",
+    "fecha": "2026-06-15T06:00:00+00:00",
+    "estado": "SCHEDULED"
+  },
+  {
+    "fifa_id": "WC-D-5",
+    "grupo": "D",
+    "fase": "Fase de grupos",
+    "local": "Turquía",
+    "visitante": "Estados Unidos",
+    "fecha": "2026-06-15T10:00:00+00:00",
+    "estado": "SCHEDULED"
+  },
+  {
+    "fifa_id": "WC-D-6",
+    "grupo": "D",
+    "fase": "Fase de grupos",
+    "local": "Paraguay",
+    "visitante": "Australia",
+    "fecha": "2026-06-15T14:00:00+00:00",
+    "estado": "SCHEDULED"
+  },
+  {
+    "fifa_id": "WC-E-1",
+    "grupo": "E",
+    "fase": "Fase de grupos",
+    "local": "Alemania",
+    "visitante": "Curazao",
+    "fecha": "2026-06-15T18:00:00+00:00",
+    "estado": "SCHEDULED"
+  },
+  {
+    "fifa_id": "WC-E-2",
+    "grupo": "E",
+    "fase": "Fase de grupos",
+    "local": "Costa de Marfíl",
+    "visitante": "Ecuador",
+    "fecha": "2026-06-15T22:00:00+00:00",
+    "estado": "SCHEDULED"
+  },
+  {
+    "fifa_id": "WC-E-3",
+    "grupo": "E",
+    "fase": "Fase de grupos",
+    "local": "Alemania",
+    "visitante": "Costa de Marfíl",
+    "fecha": "2026-06-16T02:00:00+00:00",
+    "estado": "SCHEDULED"
+  },
+  {
+    "fifa_id": "WC-E-4",
+    "grupo": "E",
+    "fase": "Fase de grupos",
+    "local": "Ecuador",
+    "visitante": "Curazao",
+    "fecha": "2026-06-16T06:00:00+00:00",
+    "estado": "SCHEDULED"
+  },
+  {
+    "fifa_id": "WC-E-5",
+    "grupo": "E",
+    "fase": "Fase de grupos",
+    "local": "Curazao",
+    "visitante": "Costa de Marfíl",
+    "fecha": "2026-06-16T10:00:00+00:00",
+    "estado": "SCHEDULED"
+  },
+  {
+    "fifa_id": "WC-E-6",
+    "grupo": "E",
+    "fase": "Fase de grupos",
+    "local": "Ecuador",
+    "visitante": "Alemania",
+    "fecha": "2026-06-16T14:00:00+00:00",
+    "estado": "SCHEDULED"
+  },
+  {
+    "fifa_id": "WC-F-1",
+    "grupo": "F",
+    "fase": "Fase de grupos",
+    "local": "Países Bajos",
+    "visitante": "Japón",
+    "fecha": "2026-06-16T18:00:00+00:00",
+    "estado": "SCHEDULED"
+  },
+  {
+    "fifa_id": "WC-F-2",
+    "grupo": "F",
+    "fase": "Fase de grupos",
+    "local": "Suecia",
+    "visitante": "Túnez",
+    "fecha": "2026-06-16T22:00:00+00:00",
+    "estado": "SCHEDULED"
+  },
+  {
+    "fifa_id": "WC-F-3",
+    "grupo": "F",
+    "fase": "Fase de grupos",
+    "local": "Países Bajos",
+    "visitante": "Suecia",
+    "fecha": "2026-06-17T02:00:00+00:00",
+    "estado": "SCHEDULED"
+  },
+  {
+    "fifa_id": "WC-F-4",
+    "grupo": "F",
+    "fase": "Fase de grupos",
+    "local": "Túnez",
+    "visitante": "Japón",
+    "fecha": "2026-06-17T06:00:00+00:00",
+    "estado": "SCHEDULED"
+  },
+  {
+    "fifa_id": "WC-F-5",
+    "grupo": "F",
+    "fase": "Fase de grupos",
+    "local": "Túnez",
+    "visitante": "Países Bajos",
+    "fecha": "2026-06-17T10:00:00+00:00",
+    "estado": "SCHEDULED"
+  },
+  {
+    "fifa_id": "WC-F-6",
+    "grupo": "F",
+    "fase": "Fase de grupos",
+    "local": "Japón",
+    "visitante": "Suecia",
+    "fecha": "2026-06-17T14:00:00+00:00",
+    "estado": "SCHEDULED"
+  },
+  {
+    "fifa_id": "WC-G-1",
+    "grupo": "G",
+    "fase": "Fase de grupos",
+    "local": "Bélgica",
+    "visitante": "Egipto",
+    "fecha": "2026-06-17T18:00:00+00:00",
+    "estado": "SCHEDULED"
+  },
+  {
+    "fifa_id": "WC-G-2",
+    "grupo": "G",
+    "fase": "Fase de grupos",
+    "local": "RI de Irán",
+    "visitante": "Nueva Zelanda",
+    "fecha": "2026-06-17T22:00:00+00:00",
+    "estado": "SCHEDULED"
+  },
+  {
+    "fifa_id": "WC-G-3",
+    "grupo": "G",
+    "fase": "Fase de grupos",
+    "local": "Bélgica",
+    "visitante": "RI de Irán",
+    "fecha": "2026-06-18T02:00:00+00:00",
+    "estado": "SCHEDULED"
+  },
+  {
+    "fifa_id": "WC-G-4",
+    "grupo": "G",
+    "fase": "Fase de grupos",
+    "local": "Nueva Zelanda",
+    "visitante": "Egipto",
+    "fecha": "2026-06-18T06:00:00+00:00",
+    "estado": "SCHEDULED"
+  },
+  {
+    "fifa_id": "WC-G-5",
+    "grupo": "G",
+    "fase": "Fase de grupos",
+    "local": "Nueva Zelanda",
+    "visitante": "Bélgica",
+    "fecha": "2026-06-18T10:00:00+00:00",
+    "estado": "SCHEDULED"
+  },
+  {
+    "fifa_id": "WC-G-6",
+    "grupo": "G",
+    "fase": "Fase de grupos",
+    "local": "Egipto",
+    "visitante": "RI de Irán",
+    "fecha": "2026-06-18T14:00:00+00:00",
+    "estado": "SCHEDULED"
+  },
+  {
+    "fifa_id": "WC-H-1",
+    "grupo": "H",
+    "fase": "Fase de grupos",
+    "local": "España",
+    "visitante": "Cabo Verde",
+    "fecha": "2026-06-18T18:00:00+00:00",
+    "estado": "SCHEDULED"
+  },
+  {
+    "fifa_id": "WC-H-2",
+    "grupo": "H",
+    "fase": "Fase de grupos",
+    "local": "Arabia Saudí",
+    "visitante": "Uruguay",
+    "fecha": "2026-06-18T22:00:00+00:00",
+    "estado": "SCHEDULED"
+  },
+  {
+    "fifa_id": "WC-H-3",
+    "grupo": "H",
+    "fase": "Fase de grupos",
+    "local": "España",
+    "visitante": "Arabia Saudí",
+    "fecha": "2026-06-19T02:00:00+00:00",
+    "estado": "SCHEDULED"
+  },
+  {
+    "fifa_id": "WC-H-4",
+    "grupo": "H",
+    "fase": "Fase de grupos",
+    "local": "Uruguay",
+    "visitante": "Cabo Verde",
+    "fecha": "2026-06-19T06:00:00+00:00",
+    "estado": "SCHEDULED"
+  },
+  {
+    "fifa_id": "WC-H-5",
+    "grupo": "H",
+    "fase": "Fase de grupos",
+    "local": "Cabo Verde",
+    "visitante": "Arabia Saudí",
+    "fecha": "2026-06-19T10:00:00+00:00",
+    "estado": "SCHEDULED"
+  },
+  {
+    "fifa_id": "WC-H-6",
+    "grupo": "H",
+    "fase": "Fase de grupos",
+    "local": "Uruguay",
+    "visitante": "España",
+    "fecha": "2026-06-19T14:00:00+00:00",
+    "estado": "SCHEDULED"
+  },
+  {
+    "fifa_id": "WC-I-1",
+    "grupo": "I",
+    "fase": "Fase de grupos",
+    "local": "Francia",
+    "visitante": "Senegal",
+    "fecha": "2026-06-19T18:00:00+00:00",
+    "estado": "SCHEDULED"
+  },
+  {
+    "fifa_id": "WC-I-2",
+    "grupo": "I",
+    "fase": "Fase de grupos",
+    "local": "Irak",
+    "visitante": "Noruega",
+    "fecha": "2026-06-19T22:00:00+00:00",
+    "estado": "SCHEDULED"
+  },
+  {
+    "fifa_id": "WC-I-3",
+    "grupo": "I",
+    "fase": "Fase de grupos",
+    "local": "Francia",
+    "visitante": "Irak",
+    "fecha": "2026-06-20T02:00:00+00:00",
+    "estado": "SCHEDULED"
+  },
+  {
+    "fifa_id": "WC-I-4",
+    "grupo": "I",
+    "fase": "Fase de grupos",
+    "local": "Noruega",
+    "visitante": "Senegal",
+    "fecha": "2026-06-20T06:00:00+00:00",
+    "estado": "SCHEDULED"
+  },
+  {
+    "fifa_id": "WC-I-5",
+    "grupo": "I",
+    "fase": "Fase de grupos",
+    "local": "Noruega",
+    "visitante": "Francia",
+    "fecha": "2026-06-20T10:00:00+00:00",
+    "estado": "SCHEDULED"
+  },
+  {
+    "fifa_id": "WC-I-6",
+    "grupo": "I",
+    "fase": "Fase de grupos",
+    "local": "Senegal",
+    "visitante": "Irak",
+    "fecha": "2026-06-20T14:00:00+00:00",
+    "estado": "SCHEDULED"
+  },
+  {
+    "fifa_id": "WC-J-1",
+    "grupo": "J",
+    "fase": "Fase de grupos",
+    "local": "Argentina",
+    "visitante": "Argelia",
+    "fecha": "2026-06-20T18:00:00+00:00",
+    "estado": "SCHEDULED"
+  },
+  {
+    "fifa_id": "WC-J-2",
+    "grupo": "J",
+    "fase": "Fase de grupos",
+    "local": "Austria",
+    "visitante": "Jordania",
+    "fecha": "2026-06-20T22:00:00+00:00",
+    "estado": "SCHEDULED"
+  },
+  {
+    "fifa_id": "WC-J-3",
+    "grupo": "J",
+    "fase": "Fase de grupos",
+    "local": "Argentina",
+    "visitante": "Austria",
+    "fecha": "2026-06-21T02:00:00+00:00",
+    "estado": "SCHEDULED"
+  },
+  {
+    "fifa_id": "WC-J-4",
+    "grupo": "J",
+    "fase": "Fase de grupos",
+    "local": "Jordania",
+    "visitante": "Argelia",
+    "fecha": "2026-06-21T06:00:00+00:00",
+    "estado": "SCHEDULED"
+  },
+  {
+    "fifa_id": "WC-J-5",
+    "grupo": "J",
+    "fase": "Fase de grupos",
+    "local": "Argelia",
+    "visitante": "Austria",
+    "fecha": "2026-06-21T10:00:00+00:00",
+    "estado": "SCHEDULED"
+  },
+  {
+    "fifa_id": "WC-J-6",
+    "grupo": "J",
+    "fase": "Fase de grupos",
+    "local": "Jordania",
+    "visitante": "Argentina",
+    "fecha": "2026-06-21T14:00:00+00:00",
+    "estado": "SCHEDULED"
+  },
+  {
+    "fifa_id": "WC-K-1",
+    "grupo": "K",
+    "fase": "Fase de grupos",
+    "local": "Portugal",
+    "visitante": "RD Congo",
+    "fecha": "2026-06-21T18:00:00+00:00",
+    "estado": "SCHEDULED"
+  },
+  {
+    "fifa_id": "WC-K-2",
+    "grupo": "K",
+    "fase": "Fase de grupos",
+    "local": "Uzbekistán",
+    "visitante": "Colombia",
+    "fecha": "2026-06-21T22:00:00+00:00",
+    "estado": "SCHEDULED"
+  },
+  {
+    "fifa_id": "WC-K-3",
+    "grupo": "K",
+    "fase": "Fase de grupos",
+    "local": "Portugal",
+    "visitante": "Uzbekistán",
+    "fecha": "2026-06-22T02:00:00+00:00",
+    "estado": "SCHEDULED"
+  },
+  {
+    "fifa_id": "WC-K-4",
+    "grupo": "K",
+    "fase": "Fase de grupos",
+    "local": "Colombia",
+    "visitante": "RD Congo",
+    "fecha": "2026-06-22T06:00:00+00:00",
+    "estado": "SCHEDULED"
+  },
+  {
+    "fifa_id": "WC-K-5",
+    "grupo": "K",
+    "fase": "Fase de grupos",
+    "local": "Colombia",
+    "visitante": "Portugal",
+    "fecha": "2026-06-22T10:00:00+00:00",
+    "estado": "SCHEDULED"
+  },
+  {
+    "fifa_id": "WC-K-6",
+    "grupo": "K",
+    "fase": "Fase de grupos",
+    "local": "RD Congo",
+    "visitante": "Uzbekistán",
+    "fecha": "2026-06-22T14:00:00+00:00",
+    "estado": "SCHEDULED"
+  },
+  {
+    "fifa_id": "WC-L-1",
+    "grupo": "L",
+    "fase": "Fase de grupos",
+    "local": "Inglaterra",
+    "visitante": "Croacia",
+    "fecha": "2026-06-22T18:00:00+00:00",
+    "estado": "SCHEDULED"
+  },
+  {
+    "fifa_id": "WC-L-2",
+    "grupo": "L",
+    "fase": "Fase de grupos",
+    "local": "Ghana",
+    "visitante": "Panamá",
+    "fecha": "2026-06-22T22:00:00+00:00",
+    "estado": "SCHEDULED"
+  },
+  {
+    "fifa_id": "WC-L-3",
+    "grupo": "L",
+    "fase": "Fase de grupos",
+    "local": "Inglaterra",
+    "visitante": "Ghana",
+    "fecha": "2026-06-23T02:00:00+00:00",
+    "estado": "SCHEDULED"
+  },
+  {
+    "fifa_id": "WC-L-4",
+    "grupo": "L",
+    "fase": "Fase de grupos",
+    "local": "Panamá",
+    "visitante": "Croacia",
+    "fecha": "2026-06-23T06:00:00+00:00",
+    "estado": "SCHEDULED"
+  },
+  {
+    "fifa_id": "WC-L-5",
+    "grupo": "L",
+    "fase": "Fase de grupos",
+    "local": "Panamá",
+    "visitante": "Inglaterra",
+    "fecha": "2026-06-23T10:00:00+00:00",
+    "estado": "SCHEDULED"
+  },
+  {
+    "fifa_id": "WC-L-6",
+    "grupo": "L",
+    "fase": "Fase de grupos",
+    "local": "Croacia",
+    "visitante": "Ghana",
+    "fecha": "2026-06-23T14:00:00+00:00",
+    "estado": "SCHEDULED"
+  }
+]

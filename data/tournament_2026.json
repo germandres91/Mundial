@@ -1,0 +1,496 @@
+{
+  "grupos": [
+    {
+      "grupo": "A",
+      "equipos": [
+        "México",
+        "Sudáfrica",
+        "Rep. de Corea",
+        "Rep. Checa"
+      ],
+      "partidos": [
+        {
+          "fifa_id": "WC-A-1",
+          "local": "México",
+          "visitante": "Sudáfrica"
+        },
+        {
+          "fifa_id": "WC-A-2",
+          "local": "Rep. de Corea",
+          "visitante": "Rep. Checa"
+        },
+        {
+          "fifa_id": "WC-A-3",
+          "local": "Rep. Checa",
+          "visitante": "Sudáfrica"
+        },
+        {
+          "fifa_id": "WC-A-4",
+          "local": "México",
+          "visitante": "Rep. de Corea"
+        },
+        {
+          "fifa_id": "WC-A-5",
+          "local": "Sudáfrica",
+          "visitante": "Rep. de Corea"
+        },
+        {
+          "fifa_id": "WC-A-6",
+          "local": "Rep. Checa",
+          "visitante": "México"
+        }
+      ]
+    },
+    {
+      "grupo": "B",
+      "equipos": [
+        "Canadá",
+        "Bosnia / Herzegovina",
+        "Qatar",
+        "Suiza"
+      ],
+      "partidos": [
+        {
+          "fifa_id": "WC-B-1",
+          "local": "Canadá",
+          "visitante": "Bosnia / Herzegovina"
+        },
+        {
+          "fifa_id": "WC-B-2",
+          "local": "Qatar",
+          "visitante": "Suiza"
+        },
+        {
+          "fifa_id": "WC-B-3",
+          "local": "Suiza",
+          "visitante": "Bosnia / Herzegovina"
+        },
+        {
+          "fifa_id": "WC-B-4",
+          "local": "Canadá",
+          "visitante": "Qatar"
+        },
+        {
+          "fifa_id": "WC-B-5",
+          "local": "Suiza",
+          "visitante": "Canadá"
+        },
+        {
+          "fifa_id": "WC-B-6",
+          "local": "Bosnia / Herzegovina",
+          "visitante": "Qatar"
+        }
+      ]
+    },
+    {
+      "grupo": "C",
+      "equipos": [
+        "Brasil",
+        "Marruecos",
+        "Haití",
+        "Escocia"
+      ],
+      "partidos": [
+        {
+          "fifa_id": "WC-C-1",
+          "local": "Brasil",
+          "visitante": "Marruecos"
+        },
+        {
+          "fifa_id": "WC-C-2",
+          "local": "Haití",
+          "visitante": "Escocia"
+        },
+        {
+          "fifa_id": "WC-C-3",
+          "local": "Escocia",
+          "visitante": "Marruecos"
+        },
+        {
+          "fifa_id": "WC-C-4",
+          "local": "Brasil",
+          "visitante": "Haití"
+        },
+        {
+          "fifa_id": "WC-C-5",
+          "local": "Marruecos",
+          "visitante": "Haití"
+        },
+        {
+          "fifa_id": "WC-C-6",
+          "local": "Escocia",
+          "visitante": "Brasil"
+        }
+      ]
+    },
+    {
+      "grupo": "D",
+      "equipos": [
+        "Estados Unidos",
+        "Paraguay",
+        "Australia",
+        "Turquía"
+      ],
+      "partidos": [
+        {
+          "fifa_id": "WC-D-1",
+          "local": "Estados Unidos",
+          "visitante": "Paraguay"
+        },
+        {
+          "fifa_id": "WC-D-2",
+          "local": "Australia",
+          "visitante": "Turquía"
+        },
+        {
+          "fifa_id": "WC-D-3",
+          "local": "Estados Unidos",
+          "visitante": "Australia"
+        },
+        {
+          "fifa_id": "WC-D-4",
+          "local": "Turquía",
+          "visitante": "Paraguay"
+        },
+        {
+          "fifa_id": "WC-D-5",
+          "local": "Turquía",
+          "visitante": "Estados Unidos"
+        },
+        {
+          "fifa_id": "WC-D-6",
+          "local": "Paraguay",
+          "visitante": "Australia"
+        }
+      ]
+    },
+    {
+      "grupo": "E",
+      "equipos": [
+        "Alemania",
+        "Curazao",
+        "Costa de Marfíl",
+        "Ecuador"
+      ],
+      "partidos": [
+        {
+          "fifa_id": "WC-E-1",
+          "local": "Alemania",
+          "visitante": "Curazao"
+        },
+        {
+          "fifa_id": "WC-E-2",
+          "local": "Costa de Marfíl",
+          "visitante": "Ecuador"
+        },
+        {
+          "fifa_id": "WC-E-3",
+          "local": "Alemania",
+          "visitante": "Costa de Marfíl"
+        },
+        {
+          "fifa_id": "WC-E-4",
+          "local": "Ecuador",
+          "visitante": "Curazao"
+        },
+        {
+          "fifa_id": "WC-E-5",
+          "local": "Curazao",
+          "visitante": "Costa de Marfíl"
+        },
+        {
+          "fifa_id": "WC-E-6",
+          "local": "Ecuador",
+          "visitante": "Alemania"
+        }
+      ]
+    },
+    {
+      "grupo": "F",
+      "equipos": [
+        "Países Bajos",
+        "Japón",
+        "Suecia",
+        "Túnez"
+      ],
+      "partidos": [
+        {
+          "fifa_id": "WC-F-1",
+          "local": "Países Bajos",
+          "visitante": "Japón"
+        },
+        {
+          "fifa_id": "WC-F-2",
+          "local": "Suecia",
+          "visitante": "Túnez"
+        },
+        {
+          "fifa_id": "WC-F-3",
+          "local": "Países Bajos",
+          "visitante": "Suecia"
+        },
+        {
+          "fifa_id": "WC-F-4",
+          "local": "Túnez",
+          "visitante": "Japón"
+        },
+        {
+          "fifa_id": "WC-F-5",
+          "local": "Túnez",
+          "visitante": "Países Bajos"
+        },
+        {
+          "fifa_id": "WC-F-6",
+          "local": "Japón",
+          "visitante": "Suecia"
+        }
+      ]
+    },
+    {
+      "grupo": "G",
+      "equipos": [
+        "Bélgica",
+        "Egipto",
+        "RI de Irán",
+        "Nueva Zelanda"
+      ],
+      "partidos": [
+        {
+          "fifa_id": "WC-G-1",
+          "local": "Bélgica",
+          "visitante": "Egipto"
+        },
+        {
+          "fifa_id": "WC-G-2",
+          "local": "RI de Irán",
+          "visitante": "Nueva Zelanda"
+        },
+        {
+          "fifa_id": "WC-G-3",
+          "local": "Bélgica",
+          "visitante": "RI de Irán"
+        },
+        {
+          "fifa_id": "WC-G-4",
+          "local": "Nueva Zelanda",
+          "visitante": "Egipto"
+        },
+        {
+          "fifa_id": "WC-G-5",
+          "local": "Nueva Zelanda",
+          "visitante": "Bélgica"
+        },
+        {
+          "fifa_id": "WC-G-6",
+          "local": "Egipto",
+          "visitante": "RI de Irán"
+        }
+      ]
+    },
+    {
+      "grupo": "H",
+      "equipos": [
+        "España",
+        "Cabo Verde",
+        "Arabia Saudí",
+        "Uruguay"
+      ],
+      "partidos": [
+        {
+          "fifa_id": "WC-H-1",
+          "local": "España",
+          "visitante": "Cabo Verde"
+        },
+        {
+          "fifa_id": "WC-H-2",
+          "local": "Arabia Saudí",
+          "visitante": "Uruguay"
+        },
+        {
+          "fifa_id": "WC-H-3",
+          "local": "España",
+          "visitante": "Arabia Saudí"
+        },
+        {
+          "fifa_id": "WC-H-4",
+          "local": "Uruguay",
+          "visitante": "Cabo Verde"
+        },
+        {
+          "fifa_id": "WC-H-5",
+          "local": "Cabo Verde",
+          "visitante": "Arabia Saudí"
+        },
+        {
+          "fifa_id": "WC-H-6",
+          "local": "Uruguay",
+          "visitante": "España"
+        }
+      ]
+    },
+    {
+      "grupo": "I",
+      "equipos": [
+        "Francia",
+        "Senegal",
+        "Irak",
+        "Noruega"
+      ],
+      "partidos": [
+        {
+          "fifa_id": "WC-I-1",
+          "local": "Francia",
+          "visitante": "Senegal"
+        },
+        {
+          "fifa_id": "WC-I-2",
+          "local": "Irak",
+          "visitante": "Noruega"
+        },
+        {
+          "fifa_id": "WC-I-3",
+          "local": "Francia",
+          "visitante": "Irak"
+        },
+        {
+          "fifa_id": "WC-I-4",
+          "local": "Noruega",
+          "visitante": "Senegal"
+        },
+        {
+          "fifa_id": "WC-I-5",
+          "local": "Noruega",
+          "visitante": "Francia"
+        },
+        {
+          "fifa_id": "WC-I-6",
+          "local": "Senegal",
+          "visitante": "Irak"
+        }
+      ]
+    },
+    {
+      "grupo": "J",
+      "equipos": [
+        "Argentina",
+        "Argelia",
+        "Austria",
+        "Jordania"
+      ],
+      "partidos": [
+        {
+          "fifa_id": "WC-J-1",
+          "local": "Argentina",
+          "visitante": "Argelia"
+        },
+        {
+          "fifa_id": "WC-J-2",
+          "local": "Austria",
+          "visitante": "Jordania"
+        },
+        {
+          "fifa_id": "WC-J-3",
+          "local": "Argentina",
+          "visitante": "Austria"
+        },
+        {
+          "fifa_id": "WC-J-4",
+          "local": "Jordania",
+          "visitante": "Argelia"
+        },
+        {
+          "fifa_id": "WC-J-5",
+          "local": "Argelia",
+          "visitante": "Austria"
+        },
+        {
+          "fifa_id": "WC-J-6",
+          "local": "Jordania",
+          "visitante": "Argentina"
+        }
+      ]
+    },
+    {
+      "grupo": "K",
+      "equipos": [
+        "Portugal",
+        "RD Congo",
+        "Uzbekistán",
+        "Colombia"
+      ],
+      "partidos": [
+        {
+          "fifa_id": "WC-K-1",
+          "local": "Portugal",
+          "visitante": "RD Congo"
+        },
+        {
+          "fifa_id": "WC-K-2",
+          "local": "Uzbekistán",
+          "visitante": "Colombia"
+        },
+        {
+          "fifa_id": "WC-K-3",
+          "local": "Portugal",
+          "visitante": "Uzbekistán"
+        },
+        {
+          "fifa_id": "WC-K-4",
+          "local": "Colombia",
+          "visitante": "RD Congo"
+        },
+        {
+          "fifa_id": "WC-K-5",
+          "local": "Colombia",
+          "visitante": "Portugal"
+        },
+        {
+          "fifa_id": "WC-K-6",
+          "local": "RD Congo",
+          "visitante": "Uzbekistán"
+        }
+      ]
+    },
+    {
+      "grupo": "L",
+      "equipos": [
+        "Inglaterra",
+        "Croacia",
+        "Ghana",
+        "Panamá"
+      ],
+      "partidos": [
+        {
+          "fifa_id": "WC-L-1",
+          "local": "Inglaterra",
+          "visitante": "Croacia"
+        },
+        {
+          "fifa_id": "WC-L-2",
+          "local": "Ghana",
+          "visitante": "Panamá"
+        },
+        {
+          "fifa_id": "WC-L-3",
+          "local": "Inglaterra",
+          "visitante": "Ghana"
+        },
+        {
+          "fifa_id": "WC-L-4",
+          "local": "Panamá",
+          "visitante": "Croacia"
+        },
+        {
+          "fifa_id": "WC-L-5",
+          "local": "Panamá",
+          "visitante": "Inglaterra"
+        },
+        {
+          "fifa_id": "WC-L-6",
+          "local": "Croacia",
+          "visitante": "Ghana"
+        }
+      ]
+    }
+  ]
+}
