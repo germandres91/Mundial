@@ -23,6 +23,10 @@ class UserCreate(BaseModel):
     role: UserRole = UserRole.PARTICIPANT
 
 
+class PasswordReset(BaseModel):
+    password: str = Field(min_length=6, max_length=128)
+
+
 class UserOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

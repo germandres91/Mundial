@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import ChartCard from "../components/charts/ChartCard";
 import { BarChartView } from "../components/charts/Charts";
 import StatCard from "../components/StatCard";
+import { useAuth } from "../context/AuthContext";
 import { useToast } from "../context/ToastContext";
 import {
   useMutationWithRefresh,
@@ -118,6 +119,7 @@ function AddParticipant() {
 }
 
 export default function Participant() {
+  const { isAdmin } = useAuth();
   const { data: participants } = useParticipants();
   const [id, setId] = useState("");
   const numId = id ? Number(id) : null;
@@ -129,11 +131,13 @@ export default function Participant() {
       <div>
         <h1 className="text-2xl font-extrabold">Participantes</h1>
         <p className="text-sm text-slate-500">
-          Agrega participantes y revisa su rendimiento individual.
+          {isAdmin
+            ? "Agrega participantes y revisa su rendimiento individual."
+            : "Revisa el rendimiento individual de cada participante."}
         </p>
       </div>
 
-      <AddParticipant />
+      {isAdmin && <AddParticipant />}
 
       <div className="card">
         <label className="mb-1 block text-xs font-medium text-slate-500">

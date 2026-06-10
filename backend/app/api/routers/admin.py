@@ -4,10 +4,13 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
+from app.api.deps import get_current_user
+from app.core.config import settings
 from app.core.database import get_db
+from app.models.user import User
 from app.repositories.audit_repository import AuditRepository
 from app.repositories.scoring_rule_repository import ScoringRuleRepository
-from app.schemas.auth import UserCreate, UserOut
+from app.schemas.auth import PasswordReset, UserCreate, UserOut
 from app.schemas.scoring_rule import ScoringRuleOut, ScoringRuleUpdate
 from app.services.auth_service import AuthService
 from app.services.excel_service import ExcelImportError, ExcelService
@@ -95,3 +98,34 @@ def create_user(payload: UserCreate, db: Session = Depends(get_db)):
 @router.get("/users", response_model=list[UserOut])
 def list_users(db: Session = Depends(get_db)) -> list:
     return AuthService(db).users.list()
+
+
+@router.post("/users/{user_id}/reset-password", response_model=UserOut)
+def reset_password(
+    user_id: int, payload: PasswordReset, db: Session = Depends(get_db)
+):
+    service = AuthService(db)
+    user = service.users.get(user_id)
+    if user is None:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    return service.set_password(user, payload.password)
+
+
+@router.delete("/users/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_user(
+    user_id: int,
+    db: Session = Depends(get_db),
+    current: User = Depends(get_current_user),
+):
+    service = AuthService(db)
+    user = service.users.get(user_id)
+    if user is None:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    if user.email.lower() == settings.first_admin_email.lower():
+        raise HTTPException(
+            status_code=400, detail="No se puede eliminar la cuenta de administrador principal"
+        )
+    if user.id == current.id:
+        raise HTTPException(status_code=400, detail="No puedes eliminar tu propia cuenta")
+    service.users.delete(user)
+    db.commit()

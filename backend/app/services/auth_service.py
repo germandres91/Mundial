@@ -49,15 +49,42 @@ class AuthService:
         self.db.commit()
         return user
 
+    def set_password(self, user: User, new_password: str) -> User:
+        """Establece una nueva contraseña para el usuario indicado."""
+        user.hashed_password = hash_password(new_password)
+        self.db.commit()
+        return user
+
     def ensure_first_admin(self) -> None:
-        """Crea el usuario administrador inicial si no existe ninguno."""
-        existing = self.users.get_by_email(settings.first_admin_email.lower())
+        """Crea/asegura el usuario administrador inicial de forma idempotente.
+
+        - Si ya existe el admin configurado, garantiza que tenga rol ADMIN y esté
+          activo (no lo recrea ni cambia su contraseña).
+        - Si no existe, lo crea con la contraseña de entorno.
+        """
+        email = settings.first_admin_email.lower()
+        existing = self.users.get_by_email(email)
         if existing:
+            changed = False
+            if existing.role != UserRole.ADMIN:
+                existing.role = UserRole.ADMIN
+                changed = True
+            if not existing.is_active:
+                existing.is_active = True
+                changed = True
+            if changed:
+                self.db.commit()
+                logger.info("Administrador asegurado (rol/activo): %s", email)
             return
-        self.register(
-            email=settings.first_admin_email,
-            nombre=settings.first_admin_name,
-            password=settings.first_admin_password,
-            role=UserRole.ADMIN,
-        )
-        logger.info("Usuario administrador inicial creado: %s", settings.first_admin_email)
+        try:
+            self.register(
+                email=settings.first_admin_email,
+                nombre=settings.first_admin_name,
+                password=settings.first_admin_password,
+                role=UserRole.ADMIN,
+            )
+            logger.info("Usuario administrador inicial creado: %s", email)
+        except Exception:  # noqa: BLE001
+            # Otra instancia/arranque pudo crearlo en paralelo; no es fatal.
+            self.db.rollback()
+            logger.exception("No se pudo crear el admin inicial (continuando)")

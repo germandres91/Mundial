@@ -8,6 +8,7 @@ import {
   useMatches,
   useMutationWithRefresh,
   useRules,
+  useUsers,
 } from "../hooks/useApi";
 import { endpoints } from "../services/api";
 
@@ -16,6 +17,123 @@ function ActionButton({ label, icon, onClick, pending }) {
     <button className="btn-ghost justify-start" onClick={onClick} disabled={pending}>
       <span>{icon}</span> {label}
     </button>
+  );
+}
+
+function UsersManager() {
+  const toast = useToast();
+  const { data: users } = useUsers();
+  const [form, setForm] = useState({
+    nombre: "",
+    email: "",
+    password: "",
+    role: "PARTICIPANT",
+  });
+
+  const create = useMutationWithRefresh(endpoints.createUser, {
+    onSuccess: () => {
+      toast.success("Usuario creado");
+      setForm({ nombre: "", email: "", password: "", role: "PARTICIPANT" });
+    },
+    onError: (e) => toast.error(e.response?.data?.detail || "No se pudo crear el usuario"),
+  });
+
+  const remove = useMutationWithRefresh(endpoints.deleteUser, {
+    onSuccess: () => toast.success("Usuario eliminado"),
+    onError: (e) => toast.error(e.response?.data?.detail || "No se pudo eliminar"),
+  });
+
+  const resetPass = useMutationWithRefresh(
+    ({ id, password }) => endpoints.resetUserPassword(id, password),
+    {
+      onSuccess: () => toast.success("Contraseña actualizada"),
+      onError: (e) => toast.error(e.response?.data?.detail || "No se pudo cambiar"),
+    }
+  );
+
+  const roleLabel = (r) => (r === "ADMIN" ? "Administrador" : "Solo lectura");
+
+  return (
+    <div className="card">
+      <h2 className="mb-1 font-semibold">Usuarios con acceso</h2>
+      <p className="mb-3 text-sm text-slate-500">
+        Crea cuentas para quienes compartirás el link. Por defecto son de
+        <strong> solo lectura</strong>; solo el administrador puede editar.
+      </p>
+
+      <div className="mb-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
+        <input
+          className="input"
+          placeholder="Nombre"
+          value={form.nombre}
+          onChange={(e) => setForm((f) => ({ ...f, nombre: e.target.value }))}
+        />
+        <input
+          className="input"
+          placeholder="Correo"
+          value={form.email}
+          onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
+        />
+        <input
+          className="input"
+          type="text"
+          placeholder="Contraseña (mín. 6)"
+          value={form.password}
+          onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
+        />
+        <select
+          className="input"
+          value={form.role}
+          onChange={(e) => setForm((f) => ({ ...f, role: e.target.value }))}
+        >
+          <option value="PARTICIPANT">Solo lectura</option>
+          <option value="ADMIN">Administrador</option>
+        </select>
+        <button
+          className="btn-primary"
+          disabled={create.isPending || !form.nombre || !form.email || form.password.length < 6}
+          onClick={() => create.mutate(form)}
+        >
+          Crear usuario
+        </button>
+      </div>
+
+      <DataTable
+        columns={[
+          { key: "nombre", header: "Nombre" },
+          { key: "email", header: "Correo" },
+          { key: "role", header: "Rol", render: (u) => roleLabel(u.role) },
+          {
+            key: "acciones",
+            header: "",
+            render: (u) => (
+              <div className="flex gap-2">
+                <button
+                  className="btn-ghost px-2 py-1 text-xs"
+                  onClick={() => {
+                    const pwd = window.prompt(`Nueva contraseña para ${u.email}:`);
+                    if (pwd && pwd.length >= 6) resetPass.mutate({ id: u.id, password: pwd });
+                    else if (pwd) toast.error("Mínimo 6 caracteres");
+                  }}
+                >
+                  🔑 Clave
+                </button>
+                <button
+                  className="btn-ghost px-2 py-1 text-xs text-rose-500"
+                  onClick={() => {
+                    if (window.confirm(`¿Eliminar a ${u.email}?`)) remove.mutate(u.id);
+                  }}
+                >
+                  🗑️
+                </button>
+              </div>
+            ),
+          },
+        ]}
+        data={users || []}
+        emptyMessage="Sin usuarios."
+      />
+    </div>
   );
 }
 
@@ -73,9 +191,11 @@ export default function Admin() {
       <div>
         <h1 className="text-2xl font-extrabold">Administración</h1>
         <p className="text-sm text-slate-500">
-          Gestión de sincronización, importaciones y reglas.
+          Gestión de usuarios, sincronización, importaciones y reglas.
         </p>
       </div>
+
+      <UsersManager />
 
       <div className="grid gap-4 lg:grid-cols-2">
         <div className="card">

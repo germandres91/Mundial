@@ -67,6 +67,9 @@ export const useRules = () =>
 export const useAudit = () =>
   useQuery({ queryKey: ["audit"], queryFn: endpoints.audit });
 
+export const useUsers = () =>
+  useQuery({ queryKey: ["users"], queryFn: endpoints.users });
+
 export function useInvalidateAll() {
   const qc = useQueryClient();
   return () =>

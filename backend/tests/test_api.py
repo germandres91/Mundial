@@ -48,10 +48,16 @@ def test_me_returns_user(client, auth_headers):
     assert resp.json()["role"] == "ADMIN"
 
 
-def test_create_participant_public(client):
-    # Modo single-user: crear participante no requiere autenticación
+def test_create_participant_requires_auth(client):
+    # Sin sesión no se puede crear (escritura solo admin)
     resp = client.post("/api/v1/participants", json={"nombre": "Ana", "email": "a@a.com"})
-    assert resp.status_code == 201
+    assert resp.status_code == 401
+
+
+def test_read_requires_auth(client):
+    # Cualquier lectura exige sesión iniciada
+    assert client.get("/api/v1/participants").status_code == 401
+    assert client.get("/api/v1/ranking").status_code == 401
 
 
 def test_participant_crud(client, auth_headers):
@@ -63,8 +69,11 @@ def test_participant_crud(client, auth_headers):
     assert create.status_code == 201
     pid = create.json()["id"]
 
-    assert client.get("/api/v1/participants").status_code == 200
-    assert client.get(f"/api/v1/participants/{pid}").json()["nombre"] == "Ana"
+    assert client.get("/api/v1/participants", headers=auth_headers).status_code == 200
+    assert (
+        client.get(f"/api/v1/participants/{pid}", headers=auth_headers).json()["nombre"]
+        == "Ana"
+    )
 
     upd = client.put(
         f"/api/v1/participants/{pid}", json={"nombre": "Ana M"}, headers=auth_headers
@@ -72,7 +81,7 @@ def test_participant_crud(client, auth_headers):
     assert upd.json()["nombre"] == "Ana M"
 
     assert client.delete(f"/api/v1/participants/{pid}", headers=auth_headers).status_code == 204
-    assert client.get(f"/api/v1/participants/{pid}").status_code == 404
+    assert client.get(f"/api/v1/participants/{pid}", headers=auth_headers).status_code == 404
 
 
 def test_duplicate_participant(client, auth_headers):
@@ -114,7 +123,7 @@ def test_match_result_flow(db, client, auth_headers):
     assert result.status_code == 200
     assert result.json()["estado"] == "FINISHED"
 
-    ranking = client.get("/api/v1/ranking").json()
+    ranking = client.get("/api/v1/ranking", headers=auth_headers).json()
     assert ranking[0]["puntos_totales"] == 5
 
 
@@ -139,24 +148,44 @@ def test_prediction_blocked_after_finish(db, client, auth_headers):
     assert resp.status_code == 400
 
 
-def test_dashboard_summary(client):
-    resp = client.get("/api/v1/dashboard/summary")
+def test_dashboard_summary(client, auth_headers):
+    resp = client.get("/api/v1/dashboard/summary", headers=auth_headers)
     assert resp.status_code == 200
     assert "total_partidos" in resp.json()
 
 
-def test_admin_sync_public(client):
-    # Modo single-user: la sincronización ya no requiere autenticación
-    assert client.post("/api/v1/admin/sync").status_code == 200
+def test_admin_sync_requires_admin(client, auth_headers):
+    # Sin sesión: 401; con admin: 200
+    assert client.post("/api/v1/admin/sync").status_code == 401
+    assert client.post("/api/v1/admin/sync", headers=auth_headers).status_code == 200
 
 
-def test_export_ranking(client):
-    resp = client.get("/api/v1/export/ranking.xlsx")
+def test_viewer_cannot_write(client, db):
+    # Un usuario de solo lectura puede ver pero no modificar
+    AuthService(db).register(
+        email="viewer@test.com", nombre="Viewer", password="secret1",
+        role=UserRole.PARTICIPANT,
+    )
+    token = client.post(
+        "/api/v1/auth/login", json={"email": "viewer@test.com", "password": "secret1"}
+    ).json()["access_token"]
+    headers = {"Authorization": f"Bearer {token}"}
+    assert client.get("/api/v1/participants", headers=headers).status_code == 200
+    resp = client.post(
+        "/api/v1/participants",
+        json={"nombre": "Zoe", "email": "z@x.com"},
+        headers=headers,
+    )
+    assert resp.status_code == 403
+
+
+def test_export_ranking(client, auth_headers):
+    resp = client.get("/api/v1/export/ranking.xlsx", headers=auth_headers)
     assert resp.status_code == 200
     assert "spreadsheet" in resp.headers["content-type"]
 
 
-def test_export_pdf(client):
-    resp = client.get("/api/v1/export/summary.pdf")
+def test_export_pdf(client, auth_headers):
+    resp = client.get("/api/v1/export/summary.pdf", headers=auth_headers)
     assert resp.status_code == 200
     assert resp.headers["content-type"] == "application/pdf"

@@ -65,15 +65,21 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = 1440
     algorithm: str = "HS256"
 
-    first_admin_email: str = "admin@mundial2026.com"
-    first_admin_password: str = "admin1234"
-    first_admin_name: str = "Administrador"
+    first_admin_email: str = "germandres_91@hotmail.com"
+    first_admin_password: str = "Mundial2026!"
+    first_admin_name: str = "German Andres Bello Garcia"
+
+    # Permitir auto-registro público de usuarios (solo lectura). Por defecto
+    # desactivado: solo el administrador crea cuentas desde el panel.
+    allow_public_registration: bool = False
 
     # Base de datos
     database_url: str = "sqlite:///./data/mundial.db"
 
     # CORS (lista separada por comas en el .env)
     cors_origins: str = "http://localhost:5173,http://localhost:3000"
+    # Regex de orígenes permitidos (por defecto cualquier Azure Static Web App)
+    cors_origin_regex: str = r"https://.*\.azurestaticapps\.net"
 
     # Proveedor de fútbol
     football_provider: str = "mock"

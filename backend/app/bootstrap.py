@@ -16,34 +16,48 @@ logger = get_logger(__name__)
 
 
 def bootstrap() -> None:
-    """Crea tablas, reglas, calendario del torneo y carga el participante inicial."""
-    init_db()
+    """Inicializa la app sin tumbar el arranque ante cualquier error.
+
+    Cada paso está aislado: si uno falla (p. ej. en Azure con BD nueva o un
+    archivo ausente), se registra el error y la API igualmente queda en línea.
+    """
+    try:
+        init_db()
+    except Exception:  # noqa: BLE001
+        logger.exception("Fallo al inicializar la base de datos")
+        return
+
     db = SessionLocal()
     try:
-        AuthService(db).ensure_first_admin()
+        try:
+            AuthService(db).ensure_first_admin()
+        except Exception:  # noqa: BLE001
+            logger.exception("No se pudo asegurar el administrador inicial")
 
-        # Importa reglas (o siembra las por defecto)
-        ExcelService(db).import_rules()
+        try:
+            ExcelService(db).import_rules()
+        except Exception:  # noqa: BLE001
+            logger.exception("No se pudieron importar las reglas")
 
         # Crea el calendario del torneo (12 grupos, 72 partidos) si está vacío
-        if MatchRepository(db).count() == 0:
-            try:
+        try:
+            if MatchRepository(db).count() == 0:
                 TournamentService(db).seed_schedule()
-            except Exception:  # noqa: BLE001
-                logger.exception("No se pudo crear el calendario inicial")
+        except Exception:  # noqa: BLE001
+            logger.exception("No se pudo crear el calendario inicial")
 
         # Carga el participante inicial desde su formulario
-        if not ParticipantRepository(db).list():
-            formulario = resolve_path("data/formulario_german_bello.xlsm")
-            if formulario.exists():
-                try:
+        try:
+            if not ParticipantRepository(db).list():
+                formulario = resolve_path("data/formulario_german_bello.xlsm")
+                if formulario.exists():
                     ParticipantImportService(db).import_formulario(
                         str(formulario),
                         nombre="German Andres Bello Garcia",
                         email="german.andres.bello.garcia@mundial2026.com",
                     )
                     RankingService(db).recalculate()
-                except Exception:  # noqa: BLE001
-                    logger.exception("No se pudo importar el formulario inicial")
+        except Exception:  # noqa: BLE001
+            logger.exception("No se pudo importar el formulario inicial")
     finally:
         db.close()

@@ -1,7 +1,7 @@
 """Dependencias compartidas de la API (autenticación y autorización)."""
 from __future__ import annotations
 
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 
@@ -42,5 +42,22 @@ def require_admin(user: User = Depends(get_current_user)) -> User:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Se requieren privilegios de administrador",
+        )
+    return user
+
+
+_SAFE_METHODS = {"GET", "HEAD", "OPTIONS"}
+
+
+def access_control(request: Request, user: User = Depends(get_current_user)) -> User:
+    """Control de acceso por método HTTP.
+
+    - Cualquier usuario autenticado puede LEER (GET/HEAD/OPTIONS).
+    - Solo el administrador puede MODIFICAR (POST/PUT/PATCH/DELETE).
+    """
+    if request.method not in _SAFE_METHODS and user.role != UserRole.ADMIN:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Solo el administrador puede modificar datos",
         )
     return user

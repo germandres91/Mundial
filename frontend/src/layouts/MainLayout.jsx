@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { NavLink, Outlet } from "react-router-dom";
 import ThemeToggle from "../components/ThemeToggle";
+import { useAuth } from "../context/AuthContext";
 
 const NAV = [
   { to: "/", label: "Inicio Mundial", icon: "🏟️", end: true },
@@ -9,12 +10,13 @@ const NAV = [
   { to: "/ranking", label: "Ranking", icon: "🏆" },
   { to: "/estadisticas", label: "Estadísticas", icon: "📊" },
   { to: "/participante", label: "Participantes", icon: "👤" },
-  { to: "/admin", label: "Administración", icon: "⚙️" },
+  { to: "/admin", label: "Administración", icon: "⚙️", admin: true },
 ];
 
 export default function MainLayout() {
   const [open, setOpen] = useState(false);
-  const items = NAV;
+  const { user, isAdmin, logout } = useAuth();
+  const items = NAV.filter((n) => !n.admin || isAdmin);
 
   return (
     <div className="min-h-screen lg:flex">
@@ -73,8 +75,28 @@ export default function MainLayout() {
           <div className="hidden text-sm text-slate-500 lg:block">
             Plataforma de predicciones · Copa del Mundo 2026 🇺🇸🇨🇦🇲🇽
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
+            {user && (
+              <div className="hidden items-center gap-2 sm:flex">
+                <div className="text-right leading-tight">
+                  <p className="text-sm font-semibold">{user.nombre}</p>
+                  <p className="text-[11px] text-slate-500">
+                    {isAdmin ? "Administrador" : "Solo lectura"}
+                  </p>
+                </div>
+                <span className="grid h-9 w-9 place-items-center rounded-full bg-brand-600 text-sm font-bold text-white">
+                  {user.nombre?.[0]?.toUpperCase() || "U"}
+                </span>
+              </div>
+            )}
             <ThemeToggle />
+            <button
+              className="btn-ghost px-3 py-2 text-sm"
+              onClick={logout}
+              title="Cerrar sesión"
+            >
+              Salir
+            </button>
           </div>
         </header>
 

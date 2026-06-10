@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import DataTable from "../components/DataTable";
 import StatusBadge from "../components/StatusBadge";
 import { SkeletonTable } from "../components/Skeleton";
+import { useAuth } from "../context/AuthContext";
 import { useToast } from "../context/ToastContext";
 import {
   useMatches,
@@ -13,6 +14,7 @@ import { endpoints } from "../services/api";
 
 export default function Predictions() {
   const toast = useToast();
+  const { isAdmin } = useAuth();
   const { data: participants } = useParticipants();
   const [participantId, setParticipantId] = useState("");
   const { data: matches, isLoading } = useMatches();
@@ -60,9 +62,18 @@ export default function Predictions() {
     { key: "estado", header: "Estado", render: (m) => <StatusBadge status={m.estado} /> },
     {
       key: "pred",
-      header: "Tu predicción",
+      header: "Predicción",
       render: (m) => {
         const existing = predMap[m.id];
+        if (!isAdmin) {
+          return existing ? (
+            <span className="font-semibold tabular-nums">
+              {existing.pred_local} - {existing.pred_visitante}
+            </span>
+          ) : (
+            <span className="text-slate-400">—</span>
+          );
+        }
         const disabled = m.estado !== "SCHEDULED";
         return (
           <div className="flex items-center gap-2">
@@ -87,20 +98,24 @@ export default function Predictions() {
         );
       },
     },
-    {
-      key: "action",
-      header: "",
-      render: (m) =>
-        m.estado === "SCHEDULED" && (
-          <button
-            className="btn-primary px-3 py-1.5 text-xs"
-            disabled={save.isPending}
-            onClick={() => handleSave(m.id)}
-          >
-            Guardar
-          </button>
-        ),
-    },
+    ...(isAdmin
+      ? [
+          {
+            key: "action",
+            header: "",
+            render: (m) =>
+              m.estado === "SCHEDULED" && (
+                <button
+                  className="btn-primary px-3 py-1.5 text-xs"
+                  disabled={save.isPending}
+                  onClick={() => handleSave(m.id)}
+                >
+                  Guardar
+                </button>
+              ),
+          },
+        ]
+      : []),
   ];
 
   return (
@@ -108,7 +123,9 @@ export default function Predictions() {
       <div>
         <h1 className="text-2xl font-extrabold">Predicciones</h1>
         <p className="text-sm text-slate-500">
-          Registra los marcadores antes de que inicie cada partido.
+          {isAdmin
+            ? "Registra los marcadores antes de que inicie cada partido."
+            : "Consulta las predicciones registradas por cada participante."}
         </p>
       </div>
 
