@@ -39,8 +39,11 @@ class AuthService:
         role: UserRole = UserRole.PARTICIPANT,
         participant_id: int | None = None,
     ) -> User:
+        normalized = email.strip().lower()
+        if self.users.get_by_email(normalized):
+            raise ValueError(f"El email ya está registrado: {normalized}")
         user = self.users.create(
-            email=email.lower(),
+            email=normalized,
             nombre=nombre,
             hashed_password=hash_password(password),
             role=role,
@@ -84,7 +87,14 @@ class AuthService:
                 role=UserRole.ADMIN,
             )
             logger.info("Usuario administrador inicial creado: %s", email)
-        except Exception:  # noqa: BLE001
-            # Otra instancia/arranque pudo crearlo en paralelo; no es fatal.
+        except ValueError:
+            # Condición de carrera: otro worker lo creó entre la consulta y el insert.
             self.db.rollback()
-            logger.exception("No se pudo crear el admin inicial (continuando)")
+            logger.info("Admin ya existía al crear (carrera concurrente): %s", email)
+        except Exception:  # noqa: BLE001
+            self.db.rollback()
+            # Reintenta leer por si el insert falló por UNIQUE pero el registro quedó.
+            if self.users.get_by_email(email):
+                logger.info("Admin recuperado tras error de creación: %s", email)
+            else:
+                logger.exception("No se pudo crear el admin inicial (continuando)")
