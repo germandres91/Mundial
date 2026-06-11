@@ -160,6 +160,16 @@ def test_admin_sync_requires_admin(client, auth_headers):
     assert client.post("/api/v1/admin/sync", headers=auth_headers).status_code == 200
 
 
+def test_admin_sync_status(client, auth_headers):
+    assert client.get("/api/v1/admin/sync/status").status_code == 401
+    resp = client.get("/api/v1/admin/sync/status", headers=auth_headers)
+    assert resp.status_code == 200
+    body = resp.json()
+    assert "provider" in body
+    assert "partidos" in body
+    assert "provider_listo" in body
+
+
 def test_viewer_cannot_write(client, db):
     # Un usuario de solo lectura puede ver pero no modificar
     AuthService(db).register(

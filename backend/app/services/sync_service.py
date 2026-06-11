@@ -5,13 +5,15 @@ from datetime import datetime, timezone
 
 from sqlalchemy.orm import Session
 
+from app.core.config import settings
 from app.core.logging import get_logger
-from app.models.match import MatchStatus
+from app.models.match import Match, MatchStatus
 from app.providers import BaseFootballProvider, ProviderMatch, get_provider
 from app.repositories.audit_repository import AuditRepository
 from app.repositories.match_repository import MatchRepository
 from app.services.ranking_service import RankingService
 from app.services.scoring_service import ScoringService
+from app.utils.teams import team_code
 
 logger = get_logger(__name__)
 
@@ -35,6 +37,51 @@ class SyncService:
         self.db.commit()
         logger.info("Calendario importado: %d partidos", upserted)
         return upserted
+
+    def _build_team_index(self) -> dict[frozenset[str], Match]:
+        """Índice de partidos existentes por par de códigos de equipo."""
+        index: dict[frozenset[str], Match] = {}
+        for m in self.matches.list():
+            cl, cv = team_code(m.local), team_code(m.visitante)
+            if cl and cv:
+                index[frozenset((cl, cv))] = m
+        return index
+
+    def _find_existing(
+        self, pm: ProviderMatch, index: dict[frozenset[str], Match]
+    ) -> Match | None:
+        """Localiza el partido propio que corresponde al de la API.
+
+        Primero por `fifa_id`; si no, empareja por el par de selecciones
+        (independiente del idioma y del orden local/visitante).
+        """
+        if pm.fifa_id:
+            match = self.matches.get_by_fifa_id(pm.fifa_id)
+            if match:
+                return match
+        cl, cv = team_code(pm.local), team_code(pm.visitante)
+        if cl and cv:
+            return index.get(frozenset((cl, cv)))
+        return None
+
+    @staticmethod
+    def _apply_result(match: Match, pm: ProviderMatch) -> None:
+        """Vuelca el marcador/estado de la API en el partido propio.
+
+        Ajusta la orientación si el equipo local de la API es el visitante
+        nuestro (o viceversa).
+        """
+        gl, gv = pm.goles_local, pm.goles_visitante
+        same_orientation = team_code(match.local) == team_code(pm.local)
+        if not same_orientation:
+            gl, gv = gv, gl
+        if gl is not None:
+            match.goles_local = gl
+        if gv is not None:
+            match.goles_visitante = gv
+        if pm.fecha:
+            match.fecha = pm.fecha
+        match.estado = pm.estado
 
     def _upsert_match(self, pm: ProviderMatch):
         match = self.matches.get_by_fifa_id(pm.fifa_id) if pm.fifa_id else None
@@ -61,23 +108,40 @@ class SyncService:
         return match
 
     def sync(self) -> dict[str, int]:
-        """Ciclo completo: consulta API, actualiza, recalcula puntaje y ranking."""
+        """Ciclo completo: consulta API, actualiza, recalcula puntaje y ranking.
+
+        Empareja cada partido de la API con uno propio (por id o por las dos
+        selecciones). Si no encuentra correspondencia y `sync_create_missing`
+        está desactivado, lo omite para no crear partidos ajenos al torneo.
+        """
         provider_matches = self.provider.fetch_matches()
         newly_finished = 0
         updated = 0
+        skipped = 0
 
+        index = self._build_team_index()
         scoring = ScoringService(self.db)
         for pm in provider_matches:
-            if not pm.fifa_id:
-                continue
-            match = self.matches.get_by_fifa_id(pm.fifa_id)
-            was_finished = bool(match and match.estado == MatchStatus.FINISHED)
-            match = self._upsert_match(pm)
+            match = self._find_existing(pm, index)
+            if match is None:
+                if not settings.sync_create_missing:
+                    skipped += 1
+                    continue
+                was_finished = False
+                match = self._upsert_match(pm)
+                cl, cv = team_code(match.local), team_code(match.visitante)
+                if cl and cv:
+                    index[frozenset((cl, cv))] = match
+            else:
+                was_finished = match.estado == MatchStatus.FINISHED
+                self._apply_result(match, pm)
+
             updated += 1
-            if match.estado == MatchStatus.FINISHED and not was_finished:
+            if match.estado == MatchStatus.FINISHED and match.goles_local is not None:
                 self.db.flush()
                 scoring.score_match(match)
-                newly_finished += 1
+                if not was_finished:
+                    newly_finished += 1
 
         self.db.commit()
 
@@ -88,12 +152,16 @@ class SyncService:
             accion="SYNC",
             actor="scheduler",
             entidad="matches",
-            detalle=f"actualizados={updated}, finalizados_nuevos={newly_finished}",
+            detalle=(
+                f"proveedor={self.provider.name}, actualizados={updated}, "
+                f"finalizados={newly_finished}, omitidos={skipped}"
+            ),
         )
         self.db.commit()
         result = {
             "actualizados": updated,
             "finalizados_nuevos": newly_finished,
+            "omitidos": skipped,
             "timestamp": int(datetime.now(timezone.utc).timestamp()),
         }
         logger.info("Sync completado: %s", result)

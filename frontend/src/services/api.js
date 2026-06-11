@@ -76,6 +76,7 @@ export const endpoints = {
     api.put(`/admin/rules/${code}`, payload).then((r) => r.data),
   audit: () => api.get("/admin/audit").then((r) => r.data),
   triggerSync: () => api.post("/admin/sync").then((r) => r.data),
+  syncStatus: () => api.get("/admin/sync/status").then((r) => r.data),
   importCalendar: () => api.post("/admin/import/calendar").then((r) => r.data),
   importPredictions: () => api.post("/admin/import/predictions").then((r) => r.data),
   importRules: () => api.post("/admin/import/rules").then((r) => r.data),

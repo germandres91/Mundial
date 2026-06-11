@@ -72,3 +72,69 @@ def test_sync_scores_finished_match(db):
     ranking = RankingRepository(db).get(participant.id)
     assert ranking is not None
     assert ranking.puntos_totales == 5  # marcador exacto
+
+
+def test_sync_matches_by_team_names_and_orientation(db):
+    """La API (inglés, orden invertido, id distinto) actualiza el partido propio."""
+    ExcelService(db).import_rules(path="__none__")
+
+    # Partido propio en español: Colombia vs Brasil
+    own = MatchRepository(db).create(
+        fifa_id="WC-A-1",
+        local="Colombia",
+        visitante="Brasil",
+        estado=MatchStatus.SCHEDULED,
+    )
+    participant = Participant(nombre="Leo", email="leo@test.com")
+    db.add(participant)
+    db.commit()
+    db.add(
+        Prediction(
+            participant_id=participant.id, match_id=own.id, pred_local=0, pred_visitante=2
+        )
+    )
+    db.commit()
+
+    # La API reporta Brazil 2-0 Colombia (inglés, invertido, id propio de la API)
+    api_match = ProviderMatch(
+        fifa_id="998877",
+        local="Brazil",
+        visitante="Colombia",
+        goles_local=2,
+        goles_visitante=0,
+        estado=MatchStatus.FINISHED,
+    )
+    result = SyncService(db, provider=FakeProvider([api_match])).sync()
+
+    assert result["finalizados_nuevos"] == 1
+    assert result["omitidos"] == 0
+    # No se crearon partidos nuevos
+    assert MatchRepository(db).count() == 1
+
+    refreshed = MatchRepository(db).get(own.id)
+    # Orientación corregida: Colombia 0 - 2 Brasil
+    assert refreshed.goles_local == 0
+    assert refreshed.goles_visitante == 2
+
+    from app.repositories.ranking_repository import RankingRepository
+
+    ranking = RankingRepository(db).get(participant.id)
+    assert ranking is not None
+    assert ranking.puntos_totales == 5  # acertó marcador exacto 0-2
+
+
+def test_sync_skips_unknown_matches(db):
+    """Partidos de la API que no corresponden al torneo se omiten (no se crean)."""
+    ExcelService(db).import_rules(path="__none__")
+    foreign = ProviderMatch(
+        fifa_id="111",
+        local="Italy",
+        visitante="Wales",
+        goles_local=1,
+        goles_visitante=1,
+        estado=MatchStatus.FINISHED,
+    )
+    result = SyncService(db, provider=FakeProvider([foreign])).sync()
+    assert result["omitidos"] == 1
+    assert result["actualizados"] == 0
+    assert MatchRepository(db).count() == 0

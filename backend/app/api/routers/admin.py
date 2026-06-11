@@ -7,8 +7,10 @@ from sqlalchemy.orm import Session
 from app.api.deps import get_current_user
 from app.core.config import settings
 from app.core.database import get_db
+from app.models.match import MatchStatus
 from app.models.user import User
 from app.repositories.audit_repository import AuditRepository
+from app.repositories.match_repository import MatchRepository
 from app.repositories.scoring_rule_repository import ScoringRuleRepository
 from app.schemas.auth import PasswordReset, UserCreate, UserOut
 from app.schemas.scoring_rule import ScoringRuleOut, ScoringRuleUpdate
@@ -24,6 +26,38 @@ router = APIRouter()
 def trigger_sync(db: Session = Depends(get_db)) -> dict:
     """Ejecuta una sincronización manual con el proveedor de fútbol."""
     return SyncService(db).sync()
+
+
+@router.get("/sync/status")
+def sync_status(db: Session = Depends(get_db)) -> dict:
+    """Estado del proveedor y resultado de la última sincronización."""
+    last = AuditRepository(db).last_by_accion("SYNC")
+    matches = MatchRepository(db)
+    provider = (settings.football_provider or "mock").lower()
+    return {
+        "provider": provider,
+        "provider_listo": provider == "mock" or bool(settings.football_api_key),
+        "competition": settings.football_competition_id,
+        "api_key_configurada": bool(settings.football_api_key),
+        "sync_habilitada": settings.sync_enabled,
+        "intervalo_minutos": settings.sync_interval_minutes,
+        "crear_faltantes": settings.sync_create_missing,
+        "partidos": {
+            "total": matches.count(),
+            "programados": matches.count(MatchStatus.SCHEDULED),
+            "en_vivo": matches.count(MatchStatus.LIVE),
+            "finalizados": matches.count(MatchStatus.FINISHED),
+        },
+        "ultima_sync": (
+            {
+                "detalle": last.detalle,
+                "actor": last.actor,
+                "created_at": last.created_at,
+            }
+            if last
+            else None
+        ),
+    }
 
 
 @router.post("/import/calendar")

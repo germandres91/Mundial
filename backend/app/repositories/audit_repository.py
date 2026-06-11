@@ -27,3 +27,11 @@ class AuditRepository:
         return list(
             self.db.scalars(select(AuditLog).order_by(AuditLog.created_at.desc()).limit(limit))
         )
+
+    def last_by_accion(self, accion: str) -> AuditLog | None:
+        return self.db.scalar(
+            select(AuditLog)
+            .where(AuditLog.accion == accion)
+            .order_by(AuditLog.created_at.desc())
+            .limit(1)
+        )

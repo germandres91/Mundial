@@ -39,14 +39,34 @@ class FootballDataProvider(BaseFootballProvider):
         return {"X-Auth-Token": self.api_key}
 
     def fetch_matches(self) -> list[ProviderMatch]:
+        if not self.api_key:
+            logger.error(
+                "football-data.org sin API key: define FOOTBALL_API_KEY en el entorno"
+            )
+            return []
         url = f"{self.BASE_URL}/competitions/{self.competition}/matches"
         try:
             resp = httpx.get(url, headers=self._headers(), timeout=self.timeout)
+            if resp.status_code == 429:
+                logger.warning(
+                    "football-data.org: límite de peticiones alcanzado (429). "
+                    "Aumenta SYNC_INTERVAL_MINUTES."
+                )
+                return []
+            if resp.status_code in (401, 403):
+                logger.error(
+                    "football-data.org: token inválido o sin acceso a '%s' (%s)",
+                    self.competition,
+                    resp.status_code,
+                )
+                return []
             resp.raise_for_status()
         except httpx.HTTPError as exc:
             logger.error("Error consultando football-data.org: %s", exc)
             return []
-        return [self._parse(m) for m in resp.json().get("matches", [])]
+        matches = resp.json().get("matches", [])
+        logger.info("football-data.org devolvió %d partidos (%s)", len(matches), self.competition)
+        return [self._parse(m) for m in matches]
 
     @staticmethod
     def _parse(item: dict) -> ProviderMatch:

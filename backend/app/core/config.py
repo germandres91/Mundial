@@ -90,6 +90,9 @@ class Settings(BaseSettings):
     # Automatización
     sync_enabled: bool = True
     sync_interval_minutes: int = 5
+    # Si es False, la sincronización SOLO actualiza partidos existentes
+    # (empareja por equipos); no crea partidos nuevos desde la API externa.
+    sync_create_missing: bool = False
 
     # Excel
     excel_predictions_path: str = "./data/predicciones.xlsx"

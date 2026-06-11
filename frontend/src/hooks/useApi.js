@@ -67,6 +67,13 @@ export const useRules = () =>
 export const useAudit = () =>
   useQuery({ queryKey: ["audit"], queryFn: endpoints.audit });
 
+export const useSyncStatus = () =>
+  useQuery({
+    queryKey: ["syncStatus"],
+    queryFn: endpoints.syncStatus,
+    refetchInterval: AUTO_REFRESH,
+  });
+
 export const useUsers = () =>
   useQuery({ queryKey: ["users"], queryFn: endpoints.users });
 
