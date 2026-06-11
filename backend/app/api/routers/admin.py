@@ -20,6 +20,7 @@ from app.services.auth_service import AuthService
 from app.services.excel_service import ExcelImportError, ExcelService
 from app.services.ranking_service import RankingService
 from app.services.scoring_service import ScoringService
+from app.providers import get_provider
 from app.services.sync_service import SyncService
 from app.services.tournament_reset_service import TournamentResetService
 
@@ -35,9 +36,34 @@ def trigger_sync(db: Session = Depends(get_db)) -> dict:
 @router.get("/sync/status")
 def sync_status(db: Session = Depends(get_db)) -> dict:
     """Estado del proveedor y resultado de la última sincronización."""
+    from datetime import timezone
+
     last = AuditRepository(db).last_by_accion("SYNC")
     matches = MatchRepository(db)
     provider = (settings.football_provider or "mock").lower()
+
+    # Sondeo rápido: ¿la API responde y cuántos partidos trae ahora?
+    api_count = None
+    api_error = None
+    if provider != "mock":
+        try:
+            api_count = len(get_provider().fetch_matches())
+            if api_count == 0:
+                api_error = "La API respondió pero sin partidos (revisa token o competición)"
+        except Exception as exc:  # noqa: BLE001
+            api_error = str(exc)
+
+    ultima = None
+    if last:
+        created = last.created_at
+        if created.tzinfo is None:
+            created = created.replace(tzinfo=timezone.utc)
+        ultima = {
+            "detalle": last.detalle,
+            "actor": last.actor,
+            "created_at": created.astimezone(timezone.utc).isoformat(),
+        }
+
     return {
         "provider": provider,
         "provider_listo": provider == "mock" or bool(settings.football_api_key),
@@ -46,21 +72,15 @@ def sync_status(db: Session = Depends(get_db)) -> dict:
         "sync_habilitada": settings.sync_enabled,
         "intervalo_minutos": settings.sync_interval_minutes,
         "crear_faltantes": settings.sync_create_missing,
+        "api_partidos_ahora": api_count,
+        "api_error": api_error,
         "partidos": {
             "total": matches.count(),
             "programados": matches.count(MatchStatus.SCHEDULED),
             "en_vivo": matches.count(MatchStatus.LIVE),
             "finalizados": matches.count(MatchStatus.FINISHED),
         },
-        "ultima_sync": (
-            {
-                "detalle": last.detalle,
-                "actor": last.actor,
-                "created_at": last.created_at,
-            }
-            if last
-            else None
-        ),
+        "ultima_sync": ultima,
     }
 
 

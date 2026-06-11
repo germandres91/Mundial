@@ -69,16 +69,26 @@ class FootballDataProvider(BaseFootballProvider):
         return [self._parse(m) for m in matches]
 
     @staticmethod
+    def _parse_group(raw: str | None) -> str | None:
+        if not raw:
+            return None
+        if raw.startswith("GROUP_"):
+            return raw.replace("GROUP_", "")
+        return raw
+
+    @staticmethod
     def _parse(item: dict) -> ProviderMatch:
         score = item.get("score", {}).get("fullTime", {})
         utc = item.get("utcDate")
+        stage = item.get("stage") or ""
+        fase = "Fase de grupos" if stage == "GROUP_STAGE" else stage.replace("_", " ").title()
         return ProviderMatch(
             fifa_id=str(item.get("id")),
             local=item.get("homeTeam", {}).get("name", "?"),
             visitante=item.get("awayTeam", {}).get("name", "?"),
             fecha=datetime.fromisoformat(utc.replace("Z", "+00:00")) if utc else None,
-            grupo=item.get("group"),
-            fase=item.get("stage"),
+            grupo=FootballDataProvider._parse_group(item.get("group")),
+            fase=fase,
             goles_local=score.get("home"),
             goles_visitante=score.get("away"),
             estado=_STATUS_MAP.get(item.get("status", ""), MatchStatus.SCHEDULED),

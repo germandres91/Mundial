@@ -61,7 +61,15 @@ function SyncStatus() {
   const m = data.partidos || {};
   const last = data.ultima_sync;
   const lastWhen = last?.created_at
-    ? new Date(last.created_at).toLocaleString("es-CO")
+    ? new Date(last.created_at).toLocaleString("es-CO", {
+        timeZone: "America/Bogota",
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+      }) + " (hora COL)"
     : null;
 
   return (
@@ -108,7 +116,21 @@ function SyncStatus() {
               : "Desactivada"}
           </span>
         </div>
+        {data.api_partidos_ahora != null && (
+          <div className="flex justify-between sm:col-span-2">
+            <span className="text-slate-500">API ahora</span>
+            <span className="font-medium">
+              {data.api_partidos_ahora} partidos en football-data.org
+            </span>
+          </div>
+        )}
       </div>
+
+      {data.api_error && (
+        <p className="mb-3 rounded-lg bg-amber-500/10 px-3 py-2 text-xs text-amber-600 dark:text-amber-400">
+          ⚠️ {data.api_error}
+        </p>
+      )}
 
       <div className="mb-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
         <Stat label="Partidos" value={m.total ?? 0} />
@@ -366,10 +388,13 @@ export default function Admin() {
     onError: (e) => toast.error(e.response?.data?.detail || "Error en la operación"),
   });
 
-  const sync = useMutationWithRefresh(
-    endpoints.triggerSync,
-    mkHandlers("Sincronización ejecutada")
-  );
+  const sync = useMutationWithRefresh(endpoints.triggerSync, {
+    onSuccess: (d) =>
+      toast.success(
+        `Sync: ${d.recibidos ?? "?"} recibidos, ${d.actualizados} actualizados, ${d.en_vivo_horario ?? 0} en vivo`
+      ),
+    onError: (e) => toast.error(e.response?.data?.detail || "Error en la sincronización"),
+  });
   const impCal = useMutationWithRefresh(
     endpoints.importCalendar,
     mkHandlers((d) => `Calendario importado (${d.partidos})`)

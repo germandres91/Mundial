@@ -1,7 +1,7 @@
 """Servicio de sincronización con el proveedor de fútbol."""
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from sqlalchemy.orm import Session
 
@@ -65,6 +65,44 @@ class SyncService:
         return None
 
     @staticmethod
+    def _as_utc(value: datetime) -> datetime:
+        if value.tzinfo is None:
+            return value.replace(tzinfo=timezone.utc)
+        return value.astimezone(timezone.utc)
+
+    @classmethod
+    def _resolve_status(cls, pm: ProviderMatch) -> MatchStatus:
+        """Estado efectivo: API + ventana horaria si la API aún dice programado."""
+        if pm.estado in (
+            MatchStatus.LIVE,
+            MatchStatus.FINISHED,
+            MatchStatus.POSTPONED,
+            MatchStatus.CANCELLED,
+        ):
+            return pm.estado
+        if pm.fecha and pm.estado == MatchStatus.SCHEDULED:
+            now = datetime.now(timezone.utc)
+            kickoff = cls._as_utc(pm.fecha)
+            # Ventana típica de un partido (90'+descanso+stoppage)
+            if kickoff <= now < kickoff + timedelta(hours=2, minutes=15):
+                return MatchStatus.LIVE
+        return pm.estado
+
+    def _mark_live_by_schedule(self) -> int:
+        """Marca EN VIVO partidos programados cuya hora de inicio ya pasó."""
+        now = datetime.now(timezone.utc)
+        window = timedelta(hours=2, minutes=15)
+        marked = 0
+        for match in self.matches.list(estado=MatchStatus.SCHEDULED):
+            if not match.fecha:
+                continue
+            kickoff = self._as_utc(match.fecha)
+            if kickoff <= now < kickoff + window:
+                match.estado = MatchStatus.LIVE
+                marked += 1
+        return marked
+
+    @staticmethod
     def _apply_result(match: Match, pm: ProviderMatch) -> None:
         """Vuelca el marcador/estado de la API en el partido propio.
 
@@ -81,7 +119,7 @@ class SyncService:
             match.goles_visitante = gv
         if pm.fecha:
             match.fecha = pm.fecha
-        match.estado = pm.estado
+        match.estado = SyncService._resolve_status(pm)
 
     def _upsert_match(self, pm: ProviderMatch):
         match = self.matches.get_by_fifa_id(pm.fifa_id) if pm.fifa_id else None
@@ -115,6 +153,7 @@ class SyncService:
         está desactivado, lo omite para no crear partidos ajenos al torneo.
         """
         provider_matches = self.provider.fetch_matches()
+        received = len(provider_matches)
         newly_finished = 0
         updated = 0
         skipped = 0
@@ -143,6 +182,7 @@ class SyncService:
                 if not was_finished:
                     newly_finished += 1
 
+        live_marked = self._mark_live_by_schedule()
         self.db.commit()
 
         if newly_finished:
@@ -153,15 +193,18 @@ class SyncService:
             actor="scheduler",
             entidad="matches",
             detalle=(
-                f"proveedor={self.provider.name}, actualizados={updated}, "
-                f"finalizados={newly_finished}, omitidos={skipped}"
+                f"proveedor={self.provider.name}, recibidos={received}, "
+                f"actualizados={updated}, finalizados={newly_finished}, "
+                f"omitidos={skipped}, en_vivo_horario={live_marked}"
             ),
         )
         self.db.commit()
         result = {
+            "recibidos": received,
             "actualizados": updated,
             "finalizados_nuevos": newly_finished,
             "omitidos": skipped,
+            "en_vivo_horario": live_marked,
             "timestamp": int(datetime.now(timezone.utc).timestamp()),
         }
         logger.info("Sync completado: %s", result)
