@@ -25,10 +25,8 @@ export default function Home() {
   const liveMatch = liveMatches?.[0];
 
   const standingsOf = (g) => g.pronostico || g.posiciones;
-  const matchScore = (m) =>
-    m?.goles_local != null && m?.goles_visitante != null
-      ? `${m.goles_local} - ${m.goles_visitante}`
-      : "En juego";
+  const hasScore = (m) => m?.goles_local != null && m?.goles_visitante != null;
+  const matchScore = (m) => (hasScore(m) ? `${m.goles_local} - ${m.goles_visitante}` : "vs");
 
   return (
     <div className="space-y-8">
@@ -71,7 +69,13 @@ export default function Home() {
                 ? `${dashboard.proximo_partido.local} vs ${dashboard.proximo_partido.visitante}`
                 : "—"
             }
-            subtitle={liveMatch ? "Marcador actual" : ""}
+            subtitle={
+              liveMatch
+                ? hasScore(liveMatch)
+                  ? "Marcador actual"
+                  : "En juego · marcador al sincronizar"
+                : ""
+            }
             icon={liveMatch ? "🔴" : "⏱️"}
             accent={liveMatch ? "rose" : "brand"}
           />
