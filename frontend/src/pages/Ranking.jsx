@@ -12,7 +12,7 @@ export default function Ranking() {
     {
       key: "posicion",
       header: "#",
-      className: "w-16 text-center",
+      className: "w-12 text-center sm:w-16",
       render: (r) => (
         <span className="text-lg font-bold">{MEDALS[r.posicion] || r.posicion}</span>
       ),
@@ -20,17 +20,45 @@ export default function Ranking() {
     {
       key: "nombre",
       header: "Participante",
-      render: (r) => <span className="font-semibold">{r.nombre}</span>,
+      render: (r) => (
+        <div>
+          <span className="font-semibold">{r.nombre}</span>
+          {/* Detalle compacto solo en móvil */}
+          <span className="mt-0.5 block text-xs text-slate-500 sm:hidden">
+            {r.aciertos_exactos} exactos · {r.partidos_acertados} aciertos
+            {r.puntos_posiciones ? ` · +${r.puntos_posiciones} bonus` : ""}
+          </span>
+        </div>
+      ),
     },
     {
       key: "puntos_totales",
       header: "Puntos",
+      className: "text-center",
       render: (r) => (
         <span className="badge bg-brand-500/15 text-brand-400">{r.puntos_totales}</span>
       ),
     },
-    { key: "aciertos_exactos", header: "Exactos", className: "text-center" },
-    { key: "partidos_acertados", header: "Aciertos", className: "text-center" },
+    {
+      key: "puntos_posiciones",
+      header: "Bonus",
+      className: "hidden text-center sm:table-cell",
+      render: (r) => (
+        <span className={r.puntos_posiciones ? "font-semibold text-amber-500" : "text-slate-400"}>
+          {r.puntos_posiciones ? `+${r.puntos_posiciones}` : "—"}
+        </span>
+      ),
+    },
+    {
+      key: "aciertos_exactos",
+      header: "Exactos",
+      className: "hidden text-center sm:table-cell",
+    },
+    {
+      key: "partidos_acertados",
+      header: "Aciertos",
+      className: "hidden text-center sm:table-cell",
+    },
   ];
 
   return (

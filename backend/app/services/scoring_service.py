@@ -7,10 +7,13 @@ from sqlalchemy.orm import Session
 
 from app.core.logging import get_logger
 from app.models.match import Match
+from app.repositories.final_position_repository import FinalPositionRepository
 from app.repositories.match_repository import MatchRepository
+from app.repositories.position_prediction_repository import PositionPredictionRepository
 from app.repositories.prediction_repository import PredictionRepository
 from app.repositories.score_repository import ScoreRepository
 from app.repositories.scoring_rule_repository import ScoringRuleRepository
+from app.utils.teams import team_code
 
 logger = get_logger(__name__)
 
@@ -21,6 +24,24 @@ DEFAULT_RULES: dict[str, int] = {
     "WINNER": 2,       # Ganador correcto
     "DRAW": 1,         # Empate correcto
     "NONE": 0,         # Sin acierto
+    # Bonus por acertar las posiciones finales (al terminar el Mundial)
+    "POS_1": 10,       # Campeón
+    "POS_2": 9,        # Subcampeón
+    "POS_3": 7,        # Tercer puesto
+    "POS_4": 5,        # Cuarto puesto
+}
+
+# Descripciones legibles de cada regla (usadas al sembrar por defecto).
+RULE_DESCRIPTIONS: dict[str, str] = {
+    "EXACT": "Marcador exacto",
+    "WINNER_GOALS": "Ganador + goles del ganador",
+    "WINNER": "Ganador correcto",
+    "DRAW": "Empate correcto",
+    "NONE": "Sin acierto",
+    "POS_1": "Acierto 1er puesto (Campeón)",
+    "POS_2": "Acierto 2do puesto (Subcampeón)",
+    "POS_3": "Acierto 3er puesto",
+    "POS_4": "Acierto 4to puesto",
 }
 
 
@@ -40,6 +61,8 @@ class ScoringService:
         self.scores = ScoreRepository(db)
         self.matches = MatchRepository(db)
         self.rules = ScoringRuleRepository(db)
+        self.positions = PositionPredictionRepository(db)
+        self.final_positions = FinalPositionRepository(db)
 
     def _points_map(self) -> dict[str, int]:
         configured = self.rules.as_points_map()
@@ -121,3 +144,33 @@ class ScoringService:
             total += self.score_match(match)
         self.db.commit()
         return total
+
+    def score_positions(self) -> int:
+        """Puntúa los pronósticos de posiciones finales (1° a 4°).
+
+        Compara el equipo pronosticado por cada participante para cada puesto
+        contra el resultado oficial (FinalPosition). Si coincide (sin importar
+        idioma del nombre), asigna los puntos de la regla POS_n. Devuelve el
+        total de aciertos registrados.
+        """
+        real = self.final_positions.as_map()  # {1: equipo, ...}
+        real_codes = {pos: team_code(eq) or eq.lower() for pos, eq in real.items()}
+        points = self._points_map()
+
+        aciertos = 0
+        for pred in self.positions.list_all():
+            real_eq = real.get(pred.posicion)
+            if not real_eq:
+                # Aún no hay resultado oficial para ese puesto.
+                if pred.puntos:
+                    pred.puntos = 0
+                continue
+            pred_code = team_code(pred.equipo) or pred.equipo.lower()
+            if pred_code == real_codes.get(pred.posicion):
+                pred.puntos = points.get(f"POS_{pred.posicion}", 0)
+                aciertos += 1
+            else:
+                pred.puntos = 0
+        self.db.flush()
+        logger.info("Posiciones finales puntuadas: %d aciertos", aciertos)
+        return aciertos

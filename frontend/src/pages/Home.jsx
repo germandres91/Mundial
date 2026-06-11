@@ -124,6 +124,9 @@ export default function Home() {
         ) : (
           <Skeleton className="h-96 w-full rounded-2xl" />
         )}
+        <p className="text-xs text-slate-500 sm:hidden">
+          👉 Desliza el cuadro de lado a lado para ver todas las rondas.
+        </p>
         <p className="text-xs text-slate-500">
           Clasificados (12 primeros + 12 segundos + 8 mejores terceros) sembrados
           en el cuadro de eliminatorias. Los cruces de cada ronda se completan

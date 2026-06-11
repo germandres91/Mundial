@@ -12,7 +12,7 @@ from app.repositories.match_repository import MatchRepository
 from app.repositories.participant_repository import ParticipantRepository
 from app.repositories.prediction_repository import PredictionRepository
 from app.repositories.scoring_rule_repository import ScoringRuleRepository
-from app.services.scoring_service import DEFAULT_RULES
+from app.services.scoring_service import DEFAULT_RULES, RULE_DESCRIPTIONS
 
 logger = get_logger(__name__)
 
@@ -68,20 +68,36 @@ class ExcelService:
                 activo=bool(row.get("activo", True)),
             )
             count += 1
+        count += self._ensure_default_rules()
         self.db.commit()
         logger.info("Importadas %d reglas de puntaje desde Excel", count)
         return count
 
-    def _seed_default_rules(self) -> int:
-        descriptions = {
-            "EXACT": "Marcador exacto",
-            "WINNER_GOALS": "Ganador + goles del ganador",
-            "WINNER": "Ganador correcto",
-            "DRAW": "Empate correcto",
-            "NONE": "Sin acierto",
-        }
+    def _ensure_default_rules(self) -> int:
+        """Crea las reglas por defecto que falten (p. ej. POS_1..POS_4).
+
+        No sobrescribe las existentes; solo agrega las ausentes. Garantiza que
+        el bonus de posiciones finales exista aunque el Excel no lo incluya.
+        """
+        existing = {r.code for r in self.rules.list()}
+        added = 0
         for code, puntos in DEFAULT_RULES.items():
-            self.rules.upsert(code=code, descripcion=descriptions[code], puntos=puntos)
+            if code not in existing:
+                self.rules.upsert(
+                    code=code,
+                    descripcion=RULE_DESCRIPTIONS.get(code, code),
+                    puntos=puntos,
+                )
+                added += 1
+        return added
+
+    def _seed_default_rules(self) -> int:
+        for code, puntos in DEFAULT_RULES.items():
+            self.rules.upsert(
+                code=code,
+                descripcion=RULE_DESCRIPTIONS.get(code, code),
+                puntos=puntos,
+            )
         self.db.commit()
         return len(DEFAULT_RULES)
 

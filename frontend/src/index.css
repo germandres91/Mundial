@@ -56,6 +56,7 @@
   overflow: auto;
   height: 760px;
   max-height: 80vh;
+  -webkit-overflow-scrolling: touch;
 }
 .tb {
   display: flex;
@@ -67,6 +68,29 @@
   display: flex;
   flex-direction: column;
   min-width: 196px;
+}
+
+/* Compacta el cuadro en pantallas pequeñas (móvil) */
+@media (max-width: 640px) {
+  .tb-scroll {
+    height: 560px;
+    max-height: 70vh;
+  }
+  .tb-col {
+    min-width: 150px;
+  }
+  .tb-body {
+    padding-right: 24px;
+  }
+  .tb-col:not(:last-child) .tb-match::after,
+  .tb-col:not(:last-child) .tb-match::before,
+  .tb-line-in {
+    right: -12px;
+    width: 12px;
+  }
+  .tb-line-in {
+    left: -12px;
+  }
 }
 .tb-col-title {
   text-align: center;

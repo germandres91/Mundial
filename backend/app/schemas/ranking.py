@@ -13,3 +13,4 @@ class RankingRow(BaseModel):
     posicion: int
     aciertos_exactos: int
     partidos_acertados: int
+    puntos_posiciones: int = 0

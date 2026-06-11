@@ -20,6 +20,15 @@ class PositionPredictionRepository:
             )
         )
 
+    def list_all(self) -> list[PositionPrediction]:
+        return list(
+            self.db.scalars(
+                select(PositionPrediction).order_by(
+                    PositionPrediction.participant_id, PositionPrediction.posicion
+                )
+            )
+        )
+
     def upsert(
         self, participant_id: int, posicion: int, equipo: str, puntos: int
     ) -> PositionPrediction:

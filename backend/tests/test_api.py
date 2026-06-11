@@ -1,28 +1,9 @@
 """Tests de integración de la API (endpoints)."""
 from __future__ import annotations
 
-import pytest
-
 from app.models.match import Match, MatchStatus
 from app.models.user import UserRole
 from app.services.auth_service import AuthService
-
-
-@pytest.fixture()
-def admin_token(db, client):
-    AuthService(db).register(
-        email="admin@test.com", nombre="Admin", password="secret1", role=UserRole.ADMIN
-    )
-    resp = client.post(
-        "/api/v1/auth/login", json={"email": "admin@test.com", "password": "secret1"}
-    )
-    assert resp.status_code == 200
-    return resp.json()["access_token"]
-
-
-@pytest.fixture()
-def auth_headers(admin_token):
-    return {"Authorization": f"Bearer {admin_token}"}
 
 
 def test_health(client):

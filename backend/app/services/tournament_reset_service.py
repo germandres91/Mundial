@@ -17,6 +17,7 @@ from app.repositories.participant_repository import ParticipantRepository
 from app.repositories.position_prediction_repository import PositionPredictionRepository
 from app.repositories.prediction_repository import PredictionRepository
 from app.services.ranking_service import RankingService
+from app.services.scoring_service import ScoringService
 from app.services.tournament_service import TournamentService
 
 
@@ -31,6 +32,9 @@ class TournamentResetService:
         deleted = self._delete_tournament_data()
         schedule_created = TournamentService(self.db).seed_schedule()
         seed_result = self._load_german_seed()
+        # Repuntúa posiciones según el resultado oficial vigente (si existe)
+        ScoringService(self.db).score_positions()
+        self.db.commit()
         ranking = RankingService(self.db).recalculate()
         return {
             "deleted": deleted,

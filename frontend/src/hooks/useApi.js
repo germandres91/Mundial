@@ -74,6 +74,9 @@ export const useSyncStatus = () =>
     refetchInterval: AUTO_REFRESH,
   });
 
+export const useFinalPositions = () =>
+  useQuery({ queryKey: ["finalPositions"], queryFn: endpoints.finalPositions });
+
 export const useUsers = () =>
   useQuery({ queryKey: ["users"], queryFn: endpoints.users });
 

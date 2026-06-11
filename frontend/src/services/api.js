@@ -74,6 +74,9 @@ export const endpoints = {
   rules: () => api.get("/admin/rules").then((r) => r.data),
   updateRule: (code, payload) =>
     api.put(`/admin/rules/${code}`, payload).then((r) => r.data),
+  finalPositions: () => api.get("/admin/final-positions").then((r) => r.data),
+  setFinalPositions: (posiciones) =>
+    api.put("/admin/final-positions", { posiciones }).then((r) => r.data),
   audit: () => api.get("/admin/audit").then((r) => r.data),
   triggerSync: () => api.post("/admin/sync").then((r) => r.data),
   syncStatus: () => api.get("/admin/sync/status").then((r) => r.data),

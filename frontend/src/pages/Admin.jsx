@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import DataTable from "../components/DataTable";
 import Modal from "../components/Modal";
 import StatusBadge from "../components/StatusBadge";
 import { useToast } from "../context/ToastContext";
 import {
   useAudit,
+  useFinalPositions,
   useMatches,
   useMutationWithRefresh,
   useRules,
@@ -12,6 +13,13 @@ import {
   useUsers,
 } from "../hooks/useApi";
 import { endpoints } from "../services/api";
+
+const POSITION_LABELS = {
+  1: "1er puesto (Campeón)",
+  2: "2do puesto (Subcampeón)",
+  3: "3er puesto",
+  4: "4to puesto",
+};
 
 function ActionButton({ label, icon, onClick, pending }) {
   return (
@@ -258,6 +266,92 @@ function UsersManager() {
   );
 }
 
+function FinalPositionsManager() {
+  const toast = useToast();
+  const { data } = useFinalPositions();
+  const { data: matches } = useMatches();
+  const [draft, setDraft] = useState(null);
+
+  const rows = draft ?? data?.posiciones ?? [];
+
+  const teamOptions = useMemo(() => {
+    const set = new Set();
+    (matches || []).forEach((m) => {
+      if (m.local) set.add(m.local);
+      if (m.visitante) set.add(m.visitante);
+    });
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [matches]);
+
+  const save = useMutationWithRefresh(endpoints.setFinalPositions, {
+    onSuccess: (res) => {
+      toast.success(`Posiciones guardadas (${res.aciertos} aciertos)`);
+      setDraft(null);
+    },
+    onError: (e) => toast.error(e.response?.data?.detail || "No se pudo guardar"),
+  });
+
+  const setEquipo = (posicion, equipo) =>
+    setDraft(
+      rows.map((r) => (r.posicion === posicion ? { ...r, equipo } : { ...r }))
+    );
+
+  return (
+    <div className="card">
+      <h2 className="mb-1 font-semibold">Posiciones finales del Mundial</h2>
+      <p className="mb-3 text-sm text-slate-500">
+        Al terminar el torneo, registra quién quedó en cada puesto. Se otorga el
+        bonus a quienes lo acertaron y se recalcula el ranking.
+      </p>
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        {rows.map((row) => (
+          <div key={row.posicion} className="flex flex-col gap-1">
+            <label className="flex items-center justify-between text-sm font-medium">
+              <span>{POSITION_LABELS[row.posicion]}</span>
+              <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">
+                {row.puntos} pts
+              </span>
+            </label>
+            <input
+              className="input"
+              list="team-options"
+              placeholder="Equipo…"
+              value={row.equipo || ""}
+              onChange={(e) => setEquipo(row.posicion, e.target.value)}
+            />
+          </div>
+        ))}
+      </div>
+
+      <datalist id="team-options">
+        {teamOptions.map((t) => (
+          <option key={t} value={t} />
+        ))}
+      </datalist>
+
+      <div className="mt-4 flex flex-wrap gap-2">
+        <button
+          className="btn-primary"
+          disabled={save.isPending || rows.length === 0}
+          onClick={() =>
+            save.mutate(
+              rows.map((r) => ({ posicion: r.posicion, equipo: (r.equipo || "").trim() }))
+            )
+          }
+        >
+          Guardar posiciones
+        </button>
+        {draft && (
+          <button className="btn-ghost" onClick={() => setDraft(null)}>
+            Descartar cambios
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function Admin() {
   const toast = useToast();
   const { data: rules } = useRules();
@@ -323,6 +417,8 @@ export default function Admin() {
       <UsersManager />
 
       <SyncStatus />
+
+      <FinalPositionsManager />
 
       <div className="grid gap-4 lg:grid-cols-2">
         <div className="card">

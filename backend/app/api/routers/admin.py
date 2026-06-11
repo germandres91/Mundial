@@ -10,12 +10,16 @@ from app.core.database import get_db
 from app.models.match import MatchStatus
 from app.models.user import User
 from app.repositories.audit_repository import AuditRepository
+from app.repositories.final_position_repository import FinalPositionRepository
 from app.repositories.match_repository import MatchRepository
 from app.repositories.scoring_rule_repository import ScoringRuleRepository
 from app.schemas.auth import PasswordReset, UserCreate, UserOut
+from app.schemas.final_position import FinalPositionsUpdate
 from app.schemas.scoring_rule import ScoringRuleOut, ScoringRuleUpdate
 from app.services.auth_service import AuthService
 from app.services.excel_service import ExcelImportError, ExcelService
+from app.services.ranking_service import RankingService
+from app.services.scoring_service import ScoringService
 from app.services.sync_service import SyncService
 from app.services.tournament_reset_service import TournamentResetService
 
@@ -89,6 +93,54 @@ def reset_tournament(db: Session = Depends(get_db)) -> dict:
     antiguos o generados por fallback.
     """
     return TournamentResetService(db).reset_from_seed()
+
+
+@router.get("/final-positions")
+def get_final_positions(db: Session = Depends(get_db)) -> dict:
+    """Posiciones finales reales del torneo y los puntos de cada puesto."""
+    repo = FinalPositionRepository(db)
+    actuales = {fp.posicion: fp.equipo for fp in repo.list()}
+    # Puntos efectivos: defaults combinados con lo configurado en la BD.
+    rules = ScoringService(db)._points_map()
+    return {
+        "posiciones": [
+            {
+                "posicion": pos,
+                "equipo": actuales.get(pos, ""),
+                "puntos": rules.get(f"POS_{pos}", 0),
+            }
+            for pos in (1, 2, 3, 4)
+        ]
+    }
+
+
+@router.put("/final-positions")
+def set_final_positions(
+    payload: FinalPositionsUpdate, db: Session = Depends(get_db)
+) -> dict:
+    """Fija los 4 puestos finales, puntúa los pronósticos y recalcula ranking.
+
+    Un equipo vacío limpia ese puesto (deja de otorgar puntos).
+    """
+    repo = FinalPositionRepository(db)
+    for item in payload.posiciones:
+        equipo = (item.equipo or "").strip()
+        if equipo:
+            repo.upsert(posicion=item.posicion, equipo=equipo)
+        else:
+            repo.delete(item.posicion)
+    db.flush()
+    aciertos = ScoringService(db).score_positions()
+    db.commit()
+    RankingService(db).recalculate()
+    AuditRepository(db).log(
+        accion="FINAL_POSITIONS",
+        actor="admin",
+        entidad="final_positions",
+        detalle=f"aciertos={aciertos}",
+    )
+    db.commit()
+    return {"aciertos": aciertos}
 
 
 @router.get("/rules", response_model=list[ScoringRuleOut])

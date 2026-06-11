@@ -7,7 +7,7 @@ import pytest
 from app.models.match import Match, MatchStatus
 from app.repositories.participant_repository import ParticipantRepository
 from app.repositories.prediction_repository import PredictionRepository
-from app.services.excel_service import ExcelImportError, ExcelService
+from app.services.excel_service import DEFAULT_RULES, ExcelImportError, ExcelService
 
 
 @pytest.fixture()
@@ -20,7 +20,7 @@ def match(db):
 
 def test_seed_default_rules(db):
     count = ExcelService(db).import_rules(path="__no_existe__.xlsx")
-    assert count == 5
+    assert count == len(DEFAULT_RULES)
 
 
 def test_import_rules_from_file(db, tmp_path):
@@ -30,11 +30,14 @@ def test_import_rules_from_file(db, tmp_path):
     ).to_excel(file, index=False)
 
     count = ExcelService(db).import_rules(path=str(file))
-    assert count == 1
+    # 1 del Excel + el resto de defaults completados (incluye POS_1..POS_4)
+    assert count == len(DEFAULT_RULES)
 
     from app.repositories.scoring_rule_repository import ScoringRuleRepository
 
-    assert ScoringRuleRepository(db).get_by_code("EXACT").puntos == 10
+    rules = ScoringRuleRepository(db)
+    assert rules.get_by_code("EXACT").puntos == 10
+    assert rules.get_by_code("POS_1").puntos == 10
 
 
 def test_import_predictions(db, match, tmp_path):
