@@ -1,0 +1,532 @@
+{
+  "nombre": "German Andres Bello Garcia",
+  "email": "german.andres.bello.garcia@mundial2026.com",
+  "predicciones": [
+    {
+      "grupo": "A",
+      "local": "México",
+      "visitante": "Sudáfrica",
+      "pred_local": 2,
+      "pred_visitante": 1
+    },
+    {
+      "grupo": "A",
+      "local": "Rep. de Corea",
+      "visitante": "Rep. Checa",
+      "pred_local": 1,
+      "pred_visitante": 1
+    },
+    {
+      "grupo": "A",
+      "local": "Rep. Checa",
+      "visitante": "Sudáfrica",
+      "pred_local": 2,
+      "pred_visitante": 1
+    },
+    {
+      "grupo": "A",
+      "local": "México",
+      "visitante": "Rep. de Corea",
+      "pred_local": 2,
+      "pred_visitante": 1
+    },
+    {
+      "grupo": "A",
+      "local": "Sudáfrica",
+      "visitante": "Rep. de Corea",
+      "pred_local": 1,
+      "pred_visitante": 2
+    },
+    {
+      "grupo": "A",
+      "local": "Rep. Checa",
+      "visitante": "México",
+      "pred_local": 1,
+      "pred_visitante": 2
+    },
+    {
+      "grupo": "B",
+      "local": "Canadá",
+      "visitante": "Bosnia / Herzegovina",
+      "pred_local": 1,
+      "pred_visitante": 1
+    },
+    {
+      "grupo": "B",
+      "local": "Qatar",
+      "visitante": "Suiza",
+      "pred_local": 0,
+      "pred_visitante": 2
+    },
+    {
+      "grupo": "B",
+      "local": "Suiza",
+      "visitante": "Bosnia / Herzegovina",
+      "pred_local": 2,
+      "pred_visitante": 1
+    },
+    {
+      "grupo": "B",
+      "local": "Canadá",
+      "visitante": "Qatar",
+      "pred_local": 2,
+      "pred_visitante": 0
+    },
+    {
+      "grupo": "B",
+      "local": "Suiza",
+      "visitante": "Canadá",
+      "pred_local": 1,
+      "pred_visitante": 1
+    },
+    {
+      "grupo": "B",
+      "local": "Bosnia / Herzegovina",
+      "visitante": "Qatar",
+      "pred_local": 2,
+      "pred_visitante": 0
+    },
+    {
+      "grupo": "C",
+      "local": "Brasil",
+      "visitante": "Marruecos",
+      "pred_local": 1,
+      "pred_visitante": 1
+    },
+    {
+      "grupo": "C",
+      "local": "Haití",
+      "visitante": "Escocia",
+      "pred_local": 0,
+      "pred_visitante": 2
+    },
+    {
+      "grupo": "C",
+      "local": "Escocia",
+      "visitante": "Marruecos",
+      "pred_local": 1,
+      "pred_visitante": 2
+    },
+    {
+      "grupo": "C",
+      "local": "Brasil",
+      "visitante": "Haití",
+      "pred_local": 4,
+      "pred_visitante": 0
+    },
+    {
+      "grupo": "C",
+      "local": "Marruecos",
+      "visitante": "Haití",
+      "pred_local": 2,
+      "pred_visitante": 0
+    },
+    {
+      "grupo": "C",
+      "local": "Escocia",
+      "visitante": "Brasil",
+      "pred_local": 0,
+      "pred_visitante": 2
+    },
+    {
+      "grupo": "D",
+      "local": "Estados Unidos",
+      "visitante": "Paraguay",
+      "pred_local": 2,
+      "pred_visitante": 1
+    },
+    {
+      "grupo": "D",
+      "local": "Australia",
+      "visitante": "Turquía",
+      "pred_local": 1,
+      "pred_visitante": 2
+    },
+    {
+      "grupo": "D",
+      "local": "Estados Unidos",
+      "visitante": "Australia",
+      "pred_local": 2,
+      "pred_visitante": 0
+    },
+    {
+      "grupo": "D",
+      "local": "Turquía",
+      "visitante": "Paraguay",
+      "pred_local": 1,
+      "pred_visitante": 1
+    },
+    {
+      "grupo": "D",
+      "local": "Turquía",
+      "visitante": "Estados Unidos",
+      "pred_local": 1,
+      "pred_visitante": 1
+    },
+    {
+      "grupo": "D",
+      "local": "Paraguay",
+      "visitante": "Australia",
+      "pred_local": 1,
+      "pred_visitante": 1
+    },
+    {
+      "grupo": "E",
+      "local": "Alemania",
+      "visitante": "Curazao",
+      "pred_local": 3,
+      "pred_visitante": 0
+    },
+    {
+      "grupo": "E",
+      "local": "Costa de Marfíl",
+      "visitante": "Ecuador",
+      "pred_local": 1,
+      "pred_visitante": 1
+    },
+    {
+      "grupo": "E",
+      "local": "Alemania",
+      "visitante": "Costa de Marfíl",
+      "pred_local": 2,
+      "pred_visitante": 1
+    },
+    {
+      "grupo": "E",
+      "local": "Ecuador",
+      "visitante": "Curazao",
+      "pred_local": 2,
+      "pred_visitante": 0
+    },
+    {
+      "grupo": "E",
+      "local": "Curazao",
+      "visitante": "Costa de Marfíl",
+      "pred_local": 0,
+      "pred_visitante": 2
+    },
+    {
+      "grupo": "E",
+      "local": "Ecuador",
+      "visitante": "Alemania",
+      "pred_local": 1,
+      "pred_visitante": 2
+    },
+    {
+      "grupo": "F",
+      "local": "Países Bajos",
+      "visitante": "Japón",
+      "pred_local": 1,
+      "pred_visitante": 1
+    },
+    {
+      "grupo": "F",
+      "local": "Suecia",
+      "visitante": "Túnez",
+      "pred_local": 2,
+      "pred_visitante": 0
+    },
+    {
+      "grupo": "F",
+      "local": "Países Bajos",
+      "visitante": "Suecia",
+      "pred_local": 2,
+      "pred_visitante": 1
+    },
+    {
+      "grupo": "F",
+      "local": "Túnez",
+      "visitante": "Japón",
+      "pred_local": 0,
+      "pred_visitante": 1
+    },
+    {
+      "grupo": "F",
+      "local": "Túnez",
+      "visitante": "Países Bajos",
+      "pred_local": 0,
+      "pred_visitante": 2
+    },
+    {
+      "grupo": "F",
+      "local": "Japón",
+      "visitante": "Suecia",
+      "pred_local": 1,
+      "pred_visitante": 1
+    },
+    {
+      "grupo": "G",
+      "local": "Bélgica",
+      "visitante": "Egipto",
+      "pred_local": 2,
+      "pred_visitante": 1
+    },
+    {
+      "grupo": "G",
+      "local": "RI de Irán",
+      "visitante": "Nueva Zelanda",
+      "pred_local": 2,
+      "pred_visitante": 0
+    },
+    {
+      "grupo": "G",
+      "local": "Bélgica",
+      "visitante": "RI de Irán",
+      "pred_local": 2,
+      "pred_visitante": 0
+    },
+    {
+      "grupo": "G",
+      "local": "Nueva Zelanda",
+      "visitante": "Egipto",
+      "pred_local": 0,
+      "pred_visitante": 2
+    },
+    {
+      "grupo": "G",
+      "local": "Nueva Zelanda",
+      "visitante": "Bélgica",
+      "pred_local": 0,
+      "pred_visitante": 3
+    },
+    {
+      "grupo": "G",
+      "local": "Egipto",
+      "visitante": "RI de Irán",
+      "pred_local": 1,
+      "pred_visitante": 1
+    },
+    {
+      "grupo": "H",
+      "local": "España",
+      "visitante": "Cabo Verde",
+      "pred_local": 3,
+      "pred_visitante": 0
+    },
+    {
+      "grupo": "H",
+      "local": "Arabia Saudí",
+      "visitante": "Uruguay",
+      "pred_local": 0,
+      "pred_visitante": 2
+    },
+    {
+      "grupo": "H",
+      "local": "España",
+      "visitante": "Arabia Saudí",
+      "pred_local": 3,
+      "pred_visitante": 0
+    },
+    {
+      "grupo": "H",
+      "local": "Uruguay",
+      "visitante": "Cabo Verde",
+      "pred_local": 2,
+      "pred_visitante": 0
+    },
+    {
+      "grupo": "H",
+      "local": "Cabo Verde",
+      "visitante": "Arabia Saudí",
+      "pred_local": 1,
+      "pred_visitante": 1
+    },
+    {
+      "grupo": "H",
+      "local": "Uruguay",
+      "visitante": "España",
+      "pred_local": 1,
+      "pred_visitante": 2
+    },
+    {
+      "grupo": "I",
+      "local": "Francia",
+      "visitante": "Senegal",
+      "pred_local": 2,
+      "pred_visitante": 1
+    },
+    {
+      "grupo": "I",
+      "local": "Irak",
+      "visitante": "Noruega",
+      "pred_local": 0,
+      "pred_visitante": 2
+    },
+    {
+      "grupo": "I",
+      "local": "Francia",
+      "visitante": "Irak",
+      "pred_local": 3,
+      "pred_visitante": 0
+    },
+    {
+      "grupo": "I",
+      "local": "Noruega",
+      "visitante": "Senegal",
+      "pred_local": 1,
+      "pred_visitante": 1
+    },
+    {
+      "grupo": "I",
+      "local": "Noruega",
+      "visitante": "Francia",
+      "pred_local": 1,
+      "pred_visitante": 2
+    },
+    {
+      "grupo": "I",
+      "local": "Senegal",
+      "visitante": "Irak",
+      "pred_local": 2,
+      "pred_visitante": 0
+    },
+    {
+      "grupo": "J",
+      "local": "Argentina",
+      "visitante": "Argelia",
+      "pred_local": 2,
+      "pred_visitante": 0
+    },
+    {
+      "grupo": "J",
+      "local": "Austria",
+      "visitante": "Jordania",
+      "pred_local": 2,
+      "pred_visitante": 0
+    },
+    {
+      "grupo": "J",
+      "local": "Argentina",
+      "visitante": "Austria",
+      "pred_local": 2,
+      "pred_visitante": 1
+    },
+    {
+      "grupo": "J",
+      "local": "Jordania",
+      "visitante": "Argelia",
+      "pred_local": 0,
+      "pred_visitante": 2
+    },
+    {
+      "grupo": "J",
+      "local": "Argelia",
+      "visitante": "Austria",
+      "pred_local": 1,
+      "pred_visitante": 1
+    },
+    {
+      "grupo": "J",
+      "local": "Jordania",
+      "visitante": "Argentina",
+      "pred_local": 0,
+      "pred_visitante": 3
+    },
+    {
+      "grupo": "K",
+      "local": "Portugal",
+      "visitante": "RD Congo",
+      "pred_local": 3,
+      "pred_visitante": 0
+    },
+    {
+      "grupo": "K",
+      "local": "Uzbekistán",
+      "visitante": "Colombia",
+      "pred_local": 0,
+      "pred_visitante": 2
+    },
+    {
+      "grupo": "K",
+      "local": "Portugal",
+      "visitante": "Uzbekistán",
+      "pred_local": 3,
+      "pred_visitante": 0
+    },
+    {
+      "grupo": "K",
+      "local": "Colombia",
+      "visitante": "RD Congo",
+      "pred_local": 2,
+      "pred_visitante": 0
+    },
+    {
+      "grupo": "K",
+      "local": "Colombia",
+      "visitante": "Portugal",
+      "pred_local": 1,
+      "pred_visitante": 1
+    },
+    {
+      "grupo": "K",
+      "local": "RD Congo",
+      "visitante": "Uzbekistán",
+      "pred_local": 1,
+      "pred_visitante": 1
+    },
+    {
+      "grupo": "L",
+      "local": "Inglaterra",
+      "visitante": "Croacia",
+      "pred_local": 1,
+      "pred_visitante": 1
+    },
+    {
+      "grupo": "L",
+      "local": "Ghana",
+      "visitante": "Panamá",
+      "pred_local": 2,
+      "pred_visitante": 1
+    },
+    {
+      "grupo": "L",
+      "local": "Inglaterra",
+      "visitante": "Ghana",
+      "pred_local": 2,
+      "pred_visitante": 0
+    },
+    {
+      "grupo": "L",
+      "local": "Panamá",
+      "visitante": "Croacia",
+      "pred_local": 0,
+      "pred_visitante": 2
+    },
+    {
+      "grupo": "L",
+      "local": "Panamá",
+      "visitante": "Inglaterra",
+      "pred_local": 0,
+      "pred_visitante": 3
+    },
+    {
+      "grupo": "L",
+      "local": "Croacia",
+      "visitante": "Ghana",
+      "pred_local": 2,
+      "pred_visitante": 0
+    }
+  ],
+  "top4": [
+    {
+      "posicion": 1,
+      "equipo": "España",
+      "puntos": 10
+    },
+    {
+      "posicion": 2,
+      "equipo": "Francia",
+      "puntos": 9
+    },
+    {
+      "posicion": 3,
+      "equipo": "Brasil",
+      "puntos": 7
+    },
+    {
+      "posicion": 4,
+      "equipo": "Colombia",
+      "puntos": 5
+    }
+  ]
+}

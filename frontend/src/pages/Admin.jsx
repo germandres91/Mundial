@@ -171,6 +171,10 @@ export default function Admin() {
     endpoints.recalculateRanking,
     mkHandlers("Ranking recalculado")
   );
+  const resetTournament = useMutationWithRefresh(
+    endpoints.resetTournament,
+    mkHandlers((d) => `Torneo reiniciado: ${d.schedule_created} partidos creados`)
+  );
   const updateRule = useMutationWithRefresh(
     ({ code, puntos }) => endpoints.updateRule(code, { puntos }),
     { onSuccess: () => toast.success("Regla actualizada") }
@@ -206,6 +210,20 @@ export default function Admin() {
             <ActionButton label="Importar predicciones" icon="📥" onClick={impPred.mutate} pending={impPred.isPending} />
             <ActionButton label="Importar reglas" icon="📏" onClick={impRules.mutate} pending={impRules.isPending} />
             <ActionButton label="Recalcular ranking" icon="🧮" onClick={recalc.mutate} pending={recalc.isPending} />
+            <ActionButton
+              label="Resetear torneo oficial"
+              icon="♻️"
+              pending={resetTournament.isPending}
+              onClick={() => {
+                if (
+                  window.confirm(
+                    "Esto borra partidos/predicciones/ranking y recarga el torneo oficial. Conserva los usuarios. ¿Continuar?"
+                  )
+                ) {
+                  resetTournament.mutate();
+                }
+              }}
+            />
           </div>
         </div>
 

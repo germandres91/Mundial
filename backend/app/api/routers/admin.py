@@ -15,6 +15,7 @@ from app.schemas.scoring_rule import ScoringRuleOut, ScoringRuleUpdate
 from app.services.auth_service import AuthService
 from app.services.excel_service import ExcelImportError, ExcelService
 from app.services.sync_service import SyncService
+from app.services.tournament_reset_service import TournamentResetService
 
 router = APIRouter()
 
@@ -44,6 +45,16 @@ def import_predictions(db: Session = Depends(get_db)) -> dict:
 def import_rules(db: Session = Depends(get_db)) -> dict:
     """Importa las reglas de puntaje desde el Excel configurado."""
     return {"reglas": ExcelService(db).import_rules()}
+
+
+@router.post("/reset/tournament")
+def reset_tournament(db: Session = Depends(get_db)) -> dict:
+    """Reinicia partidos/predicciones/ranking con los datos oficiales del repo.
+
+    Conserva los usuarios de acceso. Útil cuando Azure quedó con datos mock
+    antiguos o generados por fallback.
+    """
+    return TournamentResetService(db).reset_from_seed()
 
 
 @router.get("/rules", response_model=list[ScoringRuleOut])

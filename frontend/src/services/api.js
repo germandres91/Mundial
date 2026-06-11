@@ -79,6 +79,7 @@ export const endpoints = {
   importCalendar: () => api.post("/admin/import/calendar").then((r) => r.data),
   importPredictions: () => api.post("/admin/import/predictions").then((r) => r.data),
   importRules: () => api.post("/admin/import/rules").then((r) => r.data),
+  resetTournament: () => api.post("/admin/reset/tournament").then((r) => r.data),
 
   users: () => api.get("/admin/users").then((r) => r.data),
   createUser: (payload) => api.post("/admin/users", payload).then((r) => r.data),
