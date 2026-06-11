@@ -95,6 +95,11 @@ class Settings(BaseSettings):
     # Automatización
     sync_enabled: bool = True
     sync_interval_minutes: int = 5
+    # Intervalo inteligente: cadencia rápida (segundos) cuando hay un partido en
+    # vivo o a punto de empezar; fuera de eso se usa sync_interval_minutes.
+    sync_live_seconds: int = 45
+    # Antelación (minutos) para activar la cadencia rápida antes del saque.
+    sync_live_lead_minutes: int = 15
     # Si es False, la sincronización SOLO actualiza partidos existentes
     # (empareja por equipos); no crea partidos nuevos desde la API externa.
     sync_create_missing: bool = False

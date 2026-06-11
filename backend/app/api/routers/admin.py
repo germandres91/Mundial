@@ -78,6 +78,7 @@ def sync_status(db: Session = Depends(get_db)) -> dict:
         "api_key_configurada": bool(settings.football_api_key),
         "sync_habilitada": settings.sync_enabled,
         "intervalo_minutos": settings.sync_interval_minutes,
+        "intervalo_vivo_segundos": settings.sync_live_seconds,
         "crear_faltantes": settings.sync_create_missing,
         "api_partidos_ahora": api_count,
         "api_error": api_error,

@@ -113,7 +113,9 @@ function SyncStatus() {
           <span className="text-slate-500">Automática</span>
           <span className="font-medium">
             {data.sync_habilitada
-              ? `Cada ${data.intervalo_minutos} min`
+              ? data.intervalo_vivo_segundos
+                ? `En vivo: ${data.intervalo_vivo_segundos}s · normal: ${data.intervalo_minutos} min`
+                : `Cada ${data.intervalo_minutos} min`
               : "Desactivada"}
           </span>
         </div>
