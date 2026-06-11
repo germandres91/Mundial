@@ -2,15 +2,17 @@ import { useEffect, useState } from "react";
 import Bracket from "../components/Bracket";
 import GroupCard from "../components/GroupCard";
 import KnockoutFlow from "../components/KnockoutFlow";
+import MatchCard from "../components/MatchCard";
 import StatCard from "../components/StatCard";
 import { Skeleton } from "../components/Skeleton";
-import { useBracket, useDashboard, useParticipants } from "../hooks/useApi";
+import { useBracket, useDashboard, useMatches, useParticipants } from "../hooks/useApi";
 
 export default function Home() {
   const { data: participants } = useParticipants();
   const [participantId, setParticipantId] = useState(null);
   const { data: dashboard } = useDashboard();
   const { data: bracket, isLoading } = useBracket(participantId);
+  const { data: liveMatches } = useMatches({ estado: "LIVE" });
 
   // Selecciona automáticamente el primer participante
   useEffect(() => {
@@ -20,8 +22,13 @@ export default function Home() {
   }, [participants, participantId]);
 
   const selected = participants?.find((p) => p.id === participantId);
+  const liveMatch = liveMatches?.[0];
 
   const standingsOf = (g) => g.pronostico || g.posiciones;
+  const matchScore = (m) =>
+    m?.goles_local != null && m?.goles_visitante != null
+      ? `${m.goles_local} - ${m.goles_visitante}`
+      : "En juego";
 
   return (
     <div className="space-y-8">
@@ -56,14 +63,17 @@ export default function Home() {
       {dashboard && (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <StatCard
-            title="Próximo partido"
+            title={liveMatch ? "Partido en vivo" : "Próximo partido"}
             value={
-              dashboard.proximo_partido
+              liveMatch
+                ? `${liveMatch.local} ${matchScore(liveMatch)} ${liveMatch.visitante}`
+                : dashboard.proximo_partido
                 ? `${dashboard.proximo_partido.local} vs ${dashboard.proximo_partido.visitante}`
                 : "—"
             }
-            icon="⏱️"
-            accent="brand"
+            subtitle={liveMatch ? "Marcador actual" : ""}
+            icon={liveMatch ? "🔴" : "⏱️"}
+            accent={liveMatch ? "rose" : "brand"}
           />
           <StatCard
             title="Partidos jugados"
@@ -86,6 +96,22 @@ export default function Home() {
             accent="rose"
           />
         </div>
+      )}
+
+      {liveMatches?.length > 0 && (
+        <section className="space-y-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h2 className="text-xl font-bold">Partidos en vivo 🔴</h2>
+            <span className="badge bg-rose-500/15 text-rose-400">
+              Se actualiza automáticamente
+            </span>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {liveMatches.map((m) => (
+              <MatchCard key={m.id} match={m} />
+            ))}
+          </div>
+        </section>
       )}
 
       {/* Camino al campeón */}

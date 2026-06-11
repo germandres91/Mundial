@@ -10,11 +10,18 @@ export const useDashboard = () =>
     refetchInterval: AUTO_REFRESH,
   });
 
+const LIVE_REFRESH = 30_000; // refresco rápido cuando hay partidos en vivo
+
 export const useMatches = (params) =>
   useQuery({
     queryKey: ["matches", params],
     queryFn: () => endpoints.matches(params),
-    refetchInterval: AUTO_REFRESH,
+    // Si hay algún partido en vivo, refresca más seguido para ver el marcador.
+    refetchInterval: (query) => {
+      const data = query.state.data;
+      const hayEnVivo = Array.isArray(data) && data.some((m) => m.estado === "LIVE");
+      return hayEnVivo ? LIVE_REFRESH : AUTO_REFRESH;
+    },
   });
 
 export const useParticipants = () =>

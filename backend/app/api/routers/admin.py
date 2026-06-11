@@ -9,6 +9,7 @@ from app.core.config import settings
 from app.core.database import get_db
 from app.models.match import MatchStatus
 from app.models.user import User
+from app.providers import get_provider
 from app.repositories.audit_repository import AuditRepository
 from app.repositories.final_position_repository import FinalPositionRepository
 from app.repositories.match_repository import MatchRepository
@@ -20,7 +21,6 @@ from app.services.auth_service import AuthService
 from app.services.excel_service import ExcelImportError, ExcelService
 from app.services.ranking_service import RankingService
 from app.services.scoring_service import ScoringService
-from app.providers import get_provider
 from app.services.sync_service import SyncService
 from app.services.tournament_reset_service import TournamentResetService
 
