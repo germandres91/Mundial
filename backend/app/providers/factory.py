@@ -5,6 +5,7 @@ from app.core.config import settings
 from app.core.logging import get_logger
 from app.providers.api_football_provider import APIFootballProvider
 from app.providers.base import BaseFootballProvider
+from app.providers.espn_provider import ESPNProvider
 from app.providers.football_data_provider import FootballDataProvider
 from app.providers.mock_provider import MockProvider
 from app.providers.worldcup_api_provider import WorldCupAPIProvider
@@ -13,6 +14,7 @@ logger = get_logger(__name__)
 
 _REGISTRY: dict[str, type[BaseFootballProvider]] = {
     "mock": MockProvider,
+    "espn": ESPNProvider,
     "football_data": FootballDataProvider,
     "api_football": APIFootballProvider,
     "worldcup_api": WorldCupAPIProvider,

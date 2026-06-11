@@ -31,6 +31,7 @@ function ActionButton({ label, icon, onClick, pending }) {
 
 const PROVIDER_LABEL = {
   mock: "Datos de prueba (mock)",
+  espn: "ESPN (tiempo real)",
   football_data: "football-data.org",
   api_football: "API-Football",
   worldcup_api: "World Cup API",
@@ -101,7 +102,7 @@ function SyncStatus() {
         <div className="flex justify-between">
           <span className="text-slate-500">API key</span>
           <span className="font-medium">
-            {data.provider === "mock"
+            {!data.requiere_key
               ? "No requerida"
               : data.api_key_configurada
               ? "Configurada"
@@ -120,7 +121,8 @@ function SyncStatus() {
           <div className="flex justify-between sm:col-span-2">
             <span className="text-slate-500">API ahora</span>
             <span className="font-medium">
-              {data.api_partidos_ahora} partidos en football-data.org
+              {data.api_partidos_ahora} partidos en{" "}
+              {PROVIDER_LABEL[data.provider] || data.provider}
             </span>
           </div>
         )}

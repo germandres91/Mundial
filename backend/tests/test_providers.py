@@ -6,12 +6,72 @@ from datetime import datetime, timedelta, timezone
 from app.models.match import MatchStatus
 from app.providers import get_provider
 from app.providers.base import ProviderMatch
+from app.providers.espn_provider import ESPNProvider
 from app.providers.mock_provider import MockProvider
 
 
 def test_factory_returns_mock():
     provider = get_provider("mock")
     assert provider.name == "mock"
+
+
+def test_factory_returns_espn():
+    provider = get_provider("espn")
+    assert provider.name == "espn"
+
+
+def _espn_event(state: str, name: str, home_score, away_score) -> dict:
+    return {
+        "id": "760415",
+        "date": "2026-06-11T19:00Z",
+        "status": {"type": {"state": state, "name": name}},
+        "competitions": [
+            {
+                "competitors": [
+                    {
+                        "homeAway": "home",
+                        "team": {"displayName": "Mexico"},
+                        "score": home_score,
+                    },
+                    {
+                        "homeAway": "away",
+                        "team": {"displayName": "South Africa"},
+                        "score": away_score,
+                    },
+                ]
+            }
+        ],
+    }
+
+
+def test_espn_parse_finished_match():
+    pm = ESPNProvider._parse(_espn_event("post", "STATUS_FULL_TIME", "2", "0"))
+    assert pm.fifa_id == "760415"
+    assert pm.local == "Mexico"
+    assert pm.visitante == "South Africa"
+    assert pm.goles_local == 2
+    assert pm.goles_visitante == 0
+    assert pm.estado == MatchStatus.FINISHED
+
+
+def test_espn_parse_in_progress_match():
+    pm = ESPNProvider._parse(_espn_event("in", "STATUS_IN_PROGRESS", "1", "0"))
+    assert pm.estado == MatchStatus.LIVE
+    assert pm.goles_local == 1
+    assert pm.goles_visitante == 0
+
+
+def test_espn_scheduled_match_has_no_score():
+    """Un partido no iniciado no debe traer marcador (evita 0-0 falsos)."""
+    pm = ESPNProvider._parse(_espn_event("pre", "STATUS_SCHEDULED", "0", "0"))
+    assert pm.estado == MatchStatus.SCHEDULED
+    assert pm.goles_local is None
+    assert pm.goles_visitante is None
+
+
+def test_espn_unknown_status_falls_back_to_state():
+    pm = ESPNProvider._parse(_espn_event("post", "STATUS_WEIRD_NEW", "3", "1"))
+    assert pm.estado == MatchStatus.FINISHED
 
 
 def test_factory_unknown_falls_back_to_mock():

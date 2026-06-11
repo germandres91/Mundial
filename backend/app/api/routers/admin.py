@@ -42,6 +42,10 @@ def sync_status(db: Session = Depends(get_db)) -> dict:
     matches = MatchRepository(db)
     provider = (settings.football_provider or "mock").lower()
 
+    # ESPN y mock no requieren API key; football-data sí.
+    requiere_key = provider not in ("mock", "espn")
+    provider_listo = (not requiere_key) or bool(settings.football_api_key)
+
     # Sondeo rápido: ¿la API responde y cuántos partidos trae ahora?
     api_count = None
     api_error = None
@@ -49,7 +53,7 @@ def sync_status(db: Session = Depends(get_db)) -> dict:
         try:
             api_count = len(get_provider().fetch_matches())
             if api_count == 0:
-                api_error = "La API respondió pero sin partidos (revisa token o competición)"
+                api_error = "La API respondió pero sin partidos (revisa la configuración)"
         except Exception as exc:  # noqa: BLE001
             api_error = str(exc)
 
@@ -64,10 +68,13 @@ def sync_status(db: Session = Depends(get_db)) -> dict:
             "created_at": created.astimezone(timezone.utc).isoformat(),
         }
 
+    competition = settings.espn_league if provider == "espn" else settings.football_competition_id
+
     return {
         "provider": provider,
-        "provider_listo": provider == "mock" or bool(settings.football_api_key),
-        "competition": settings.football_competition_id,
+        "provider_listo": provider_listo,
+        "competition": competition,
+        "requiere_key": requiere_key,
         "api_key_configurada": bool(settings.football_api_key),
         "sync_habilitada": settings.sync_enabled,
         "intervalo_minutos": settings.sync_interval_minutes,

@@ -87,6 +87,11 @@ class Settings(BaseSettings):
     football_api_timeout: int = 15
     football_competition_id: str = "WC"
 
+    # ESPN (API pública sin key)
+    espn_league: str = "fifa.world"
+    # Rango de fechas del torneo (YYYYMMDD-YYYYMMDD). Vacío = solo el día actual.
+    espn_date_range: str = "20260611-20260719"
+
     # Automatización
     sync_enabled: bool = True
     sync_interval_minutes: int = 5
