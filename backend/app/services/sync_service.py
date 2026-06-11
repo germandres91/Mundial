@@ -1,6 +1,7 @@
 """Servicio de sincronización con el proveedor de fútbol."""
 from __future__ import annotations
 
+import time
 from datetime import datetime, timedelta, timezone
 
 from sqlalchemy.orm import Session
@@ -16,6 +17,15 @@ from app.services.scoring_service import ScoringService
 from app.utils.teams import team_code
 
 logger = get_logger(__name__)
+
+# Prioridad para decidir qué estado "manda" al combinar lecturas del proveedor.
+_STATUS_RANK = {
+    MatchStatus.SCHEDULED: 0,
+    MatchStatus.POSTPONED: 1,
+    MatchStatus.CANCELLED: 1,
+    MatchStatus.LIVE: 2,
+    MatchStatus.FINISHED: 3,
+}
 
 
 class SyncService:
@@ -145,6 +155,69 @@ class SyncService:
         match.estado = pm.estado
         return match
 
+    @staticmethod
+    def _pm_key(pm: ProviderMatch) -> str:
+        if pm.fifa_id:
+            return f"id:{pm.fifa_id}"
+        cl, cv = team_code(pm.local), team_code(pm.visitante)
+        return f"teams:{'|'.join(sorted(filter(None, (cl, cv)))) or pm.local + pm.visitante}"
+
+    @classmethod
+    def _merge_pm(cls, base: ProviderMatch | None, new: ProviderMatch) -> ProviderMatch:
+        """Combina dos lecturas del mismo partido conservando la más informativa.
+
+        Mantiene cualquier marcador no nulo y el estado más avanzado observado
+        (programado < en vivo < finalizado). Esto evita que una lectura "vacía"
+        del tier gratuito borre un marcador real visto en otra lectura.
+        """
+        if base is None:
+            return new
+        if _STATUS_RANK.get(new.estado, 0) >= _STATUS_RANK.get(base.estado, 0):
+            base.estado = new.estado
+        if new.goles_local is not None:
+            base.goles_local = new.goles_local
+        if new.goles_visitante is not None:
+            base.goles_visitante = new.goles_visitante
+        base.fecha = new.fecha or base.fecha
+        base.grupo = base.grupo or new.grupo
+        base.fase = base.fase or new.fase
+        return base
+
+    def _should_be_live(self, pm: ProviderMatch) -> bool:
+        if pm.estado == MatchStatus.FINISHED:
+            return False
+        if not pm.fecha:
+            return False
+        now = datetime.now(timezone.utc)
+        kickoff = self._as_utc(pm.fecha)
+        return kickoff <= now < kickoff + timedelta(hours=2, minutes=15)
+
+    def _collect_provider_matches(
+        self, attempts: int = 3, pause: float = 4.0
+    ) -> list[ProviderMatch]:
+        """Hace varias lecturas y las combina.
+
+        El tier gratuito de football-data.org devuelve snapshots inconsistentes:
+        una llamada puede traer el marcador en vivo y la siguiente darlo como
+        programado sin goles. Combinamos hasta `attempts` lecturas para capturar
+        de forma fiable el marcador de los partidos que están en juego.
+        """
+        merged: dict[str, ProviderMatch] = {}
+        for i in range(max(1, attempts)):
+            batch = self.provider.fetch_matches()
+            for pm in batch:
+                key = self._pm_key(pm)
+                merged[key] = self._merge_pm(merged.get(key), pm)
+            # ¿Hay algún partido que debería estar en vivo y aún sin marcador?
+            pending = any(
+                self._should_be_live(pm) and pm.goles_local is None
+                for pm in merged.values()
+            )
+            if not pending or i == attempts - 1:
+                break
+            time.sleep(pause)
+        return list(merged.values())
+
     def sync(self) -> dict[str, int]:
         """Ciclo completo: consulta API, actualiza, recalcula puntaje y ranking.
 
@@ -152,7 +225,7 @@ class SyncService:
         selecciones). Si no encuentra correspondencia y `sync_create_missing`
         está desactivado, lo omite para no crear partidos ajenos al torneo.
         """
-        provider_matches = self.provider.fetch_matches()
+        provider_matches = self._collect_provider_matches()
         received = len(provider_matches)
         newly_finished = 0
         updated = 0

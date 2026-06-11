@@ -123,6 +123,63 @@ def test_sync_matches_by_team_names_and_orientation(db):
     assert ranking.puntos_totales == 5  # acertó marcador exacto 0-2
 
 
+class FlappingProvider(BaseFootballProvider):
+    """Simula el tier gratuito: alterna lecturas con y sin marcador."""
+
+    name = "flapping"
+
+    def __init__(self, batches):
+        self._batches = batches
+        self._i = 0
+
+    def fetch_matches(self):
+        batch = self._batches[min(self._i, len(self._batches) - 1)]
+        self._i += 1
+        return batch
+
+
+def test_sync_captures_live_score_across_flapping_reads(db, monkeypatch):
+    """Aunque la primera lectura venga vacía, el sync combina varias y captura el marcador."""
+    import app.services.sync_service as sync_module
+
+    monkeypatch.setattr(sync_module.time, "sleep", lambda *_: None)
+
+    kickoff = datetime.now(timezone.utc) - timedelta(minutes=30)
+    own = MatchRepository(db).create(
+        fifa_id="WC-A-1",
+        local="México",
+        visitante="Sudáfrica",
+        fecha=kickoff,
+        estado=MatchStatus.SCHEDULED,
+    )
+
+    empty = ProviderMatch(
+        fifa_id="537327",
+        local="Mexico",
+        visitante="South Africa",
+        fecha=kickoff,
+        goles_local=None,
+        goles_visitante=None,
+        estado=MatchStatus.SCHEDULED,
+    )
+    live = ProviderMatch(
+        fifa_id="537327",
+        local="Mexico",
+        visitante="South Africa",
+        fecha=kickoff,
+        goles_local=2,
+        goles_visitante=0,
+        estado=MatchStatus.LIVE,
+    )
+    provider = FlappingProvider([[empty], [live], [empty]])
+    SyncService(db, provider=provider).sync()
+
+    refreshed = MatchRepository(db).get(own.id)
+    assert refreshed.estado == MatchStatus.LIVE
+    assert refreshed.goles_local == 2
+    assert refreshed.goles_visitante == 0
+
+
 def test_sync_skips_unknown_matches(db):
     """Partidos de la API que no corresponden al torneo se omiten (no se crean)."""
     ExcelService(db).import_rules(path="__none__")
