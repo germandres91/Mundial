@@ -14,3 +14,5 @@ class RankingRow(BaseModel):
     aciertos_exactos: int
     partidos_acertados: int
     puntos_posiciones: int = 0
+    puntos_en_vivo: int = 0
+    provisional: bool = False

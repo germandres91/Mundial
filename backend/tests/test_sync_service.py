@@ -180,6 +180,42 @@ def test_sync_captures_live_score_across_flapping_reads(db, monkeypatch):
     assert refreshed.goles_visitante == 0
 
 
+def test_live_match_gives_provisional_points(db):
+    """Un partido EN VIVO otorga puntos provisionales en el ranking."""
+    ExcelService(db).import_rules(path="__none__")
+
+    match = MatchRepository(db).create(
+        fifa_id="WC-A-1",
+        local="México",
+        visitante="Sudáfrica",
+        goles_local=2,
+        goles_visitante=0,
+        estado=MatchStatus.LIVE,
+    )
+    exacto = Participant(nombre="Martin", email="martin@test.com")
+    ganador = Participant(nombre="Ana", email="ana@test.com")
+    db.add_all([exacto, ganador])
+    db.commit()
+    db.add(
+        Prediction(participant_id=exacto.id, match_id=match.id, pred_local=2, pred_visitante=0)
+    )
+    db.add(
+        Prediction(participant_id=ganador.id, match_id=match.id, pred_local=2, pred_visitante=1)
+    )
+    db.commit()
+
+    from app.services.ranking_service import RankingService
+
+    rows = {r.nombre: r for r in RankingService(db).get_ranking()}
+    assert rows["Martin"].puntos_totales == 5  # marcador exacto provisional
+    assert rows["Martin"].puntos_en_vivo == 5
+    assert rows["Martin"].provisional is True
+    assert rows["Ana"].puntos_totales == 3  # ganador + goles del ganador
+    assert rows["Ana"].provisional is True
+    # El líder provisional es quien acertó el marcador exacto
+    assert rows["Martin"].posicion == 1
+
+
 def test_sync_skips_unknown_matches(db):
     """Partidos de la API que no corresponden al torneo se omiten (no se crean)."""
     ExcelService(db).import_rules(path="__none__")

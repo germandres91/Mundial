@@ -137,6 +137,33 @@ class ScoringService:
         logger.info("Partido %s puntuado: %d predicciones", match.id, len(predictions))
         return len(predictions)
 
+    def live_points_by_participant(self) -> dict[int, int]:
+        """Puntos provisionales por participante de los partidos EN VIVO.
+
+        Se calcula al vuelo (no se persiste) usando el marcador actual de los
+        partidos en juego. Cuando un partido finaliza, sus puntos pasan a la
+        tabla de puntajes (definitivos) vía `score_match` y dejan de contarse
+        como provisionales.
+        """
+        from app.models.match import MatchStatus
+
+        points = self._points_map()
+        acc: dict[int, int] = {}
+        for match in self.matches.list(estado=MatchStatus.LIVE):
+            if match.goles_local is None or match.goles_visitante is None:
+                continue
+            for pred in self.predictions.list_for_match(match.id):
+                result = self.evaluate(
+                    pred.pred_local,
+                    pred.pred_visitante,
+                    match.goles_local,
+                    match.goles_visitante,
+                    points,
+                )
+                if result.puntos:
+                    acc[pred.participant_id] = acc.get(pred.participant_id, 0) + result.puntos
+        return acc
+
     def recalculate_all(self) -> int:
         """Recalcula puntajes de todos los partidos finalizados."""
         total = 0

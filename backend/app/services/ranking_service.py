@@ -22,19 +22,18 @@ class RankingService:
         self.rankings = RankingRepository(db)
         self.participants = ParticipantRepository(db)
 
-    def _position_points(self) -> dict[int, int]:
-        """Bonus de posiciones por participante (solo contra resultados reales)."""
-        return ScoringService(self.db).position_points_by_participant()
+    def _aggregate(self) -> list[tuple]:
+        """Construye las filas del ranking calculadas al vuelo y ordenadas.
 
-    def recalculate(self) -> list[RankingRow]:
-        """Recalcula y persiste el ranking de todos los participantes.
-
-        El total combina los puntos de partidos y el bonus de posiciones
-        finales (1° a 4°).
+        Total = puntos de partidos finalizados + bonus de posiciones finales +
+        puntos provisionales de partidos EN VIVO. Devuelve una lista de tuplas
+        (participant, data, bonus, live, total) ya ordenada de mayor a menor.
         """
+        scoring = ScoringService(self.db)
         participants = self.participants.list()
         all_scores = self.scores.list()
-        pos_points = self._position_points()
+        pos_points = scoring.position_points_by_participant()
+        live_points = scoring.live_points_by_participant()
 
         agg: dict[int, dict[str, int]] = {
             p.id: {"puntos": 0, "exactos": 0, "acertados": 0} for p in participants
@@ -49,20 +48,26 @@ class RankingService:
             if score.puntos > 0:
                 bucket["acertados"] += 1
 
-        def total_for(pid: int) -> int:
-            return agg[pid]["puntos"] + pos_points.get(pid, 0)
-
-        ordered = sorted(
-            participants,
-            key=lambda p: (total_for(p.id), agg[p.id]["exactos"]),
-            reverse=True,
-        )
-
-        rows: list[RankingRow] = []
-        for index, participant in enumerate(ordered, start=1):
+        rows: list[tuple] = []
+        for participant in participants:
             data = agg[participant.id]
             bonus = pos_points.get(participant.id, 0)
-            total = data["puntos"] + bonus
+            live = live_points.get(participant.id, 0)
+            total = data["puntos"] + bonus + live
+            rows.append((participant, data, bonus, live, total))
+
+        rows.sort(key=lambda r: (r[4], r[1]["exactos"]), reverse=True)
+        return rows
+
+    def recalculate(self) -> list[RankingRow]:
+        """Recalcula y persiste el ranking de todos los participantes.
+
+        El total combina los puntos de partidos finalizados, el bonus de
+        posiciones finales (1° a 4°) y los puntos provisionales en vivo.
+        """
+        aggregated = self._aggregate()
+        rows: list[RankingRow] = []
+        for index, (participant, data, bonus, live, total) in enumerate(aggregated, start=1):
             self.rankings.upsert(
                 participant_id=participant.id,
                 puntos_totales=total,
@@ -79,6 +84,8 @@ class RankingService:
                     aciertos_exactos=data["exactos"],
                     partidos_acertados=data["acertados"],
                     puntos_posiciones=bonus,
+                    puntos_en_vivo=live,
+                    provisional=live > 0,
                 )
             )
         self.db.commit()
@@ -86,20 +93,22 @@ class RankingService:
         return rows
 
     def get_ranking(self) -> list[RankingRow]:
-        """Devuelve el ranking actual desde la base de datos."""
-        pos_points = self._position_points()
+        """Devuelve el ranking actual, recalculado al vuelo (incluye en vivo)."""
         rows: list[RankingRow] = []
-        for ranking in self.rankings.list():
-            nombre = ranking.participant.nombre if ranking.participant else "?"
+        for index, (participant, data, bonus, live, total) in enumerate(
+            self._aggregate(), start=1
+        ):
             rows.append(
                 RankingRow(
-                    participant_id=ranking.participant_id,
-                    nombre=nombre,
-                    puntos_totales=ranking.puntos_totales,
-                    posicion=ranking.posicion,
-                    aciertos_exactos=ranking.aciertos_exactos,
-                    partidos_acertados=ranking.partidos_acertados,
-                    puntos_posiciones=pos_points.get(ranking.participant_id, 0),
+                    participant_id=participant.id,
+                    nombre=participant.nombre,
+                    puntos_totales=total,
+                    posicion=index,
+                    aciertos_exactos=data["exactos"],
+                    partidos_acertados=data["acertados"],
+                    puntos_posiciones=bonus,
+                    puntos_en_vivo=live,
+                    provisional=live > 0,
                 )
             )
         return rows

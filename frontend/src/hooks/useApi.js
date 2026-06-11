@@ -45,7 +45,12 @@ export const useRanking = () =>
   useQuery({
     queryKey: ["ranking"],
     queryFn: endpoints.ranking,
-    refetchInterval: AUTO_REFRESH,
+    // Refresca más seguido si hay puntos provisionales (partidos en vivo).
+    refetchInterval: (query) => {
+      const data = query.state.data;
+      const hayEnVivo = Array.isArray(data) && data.some((r) => r.provisional);
+      return hayEnVivo ? LIVE_REFRESH : AUTO_REFRESH;
+    },
   });
 
 export const useStatsHits = () =>

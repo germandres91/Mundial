@@ -258,7 +258,13 @@ class SyncService:
         live_marked = self._mark_live_by_schedule()
         self.db.commit()
 
-        if newly_finished:
+        # Recalcula el ranking si finalizó algún partido o si hay partidos en
+        # vivo con marcador (para reflejar los puntos provisionales).
+        live_with_score = any(
+            m.goles_local is not None and m.goles_visitante is not None
+            for m in self.matches.list(estado=MatchStatus.LIVE)
+        )
+        if newly_finished or live_with_score:
             RankingService(self.db).recalculate()
 
         self.audit.log(

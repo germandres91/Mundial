@@ -7,6 +7,7 @@ const MEDALS = { 1: "🥇", 2: "🥈", 3: "🥉" };
 
 export default function Ranking() {
   const { data, isLoading } = useRanking();
+  const hayEnVivo = Array.isArray(data) && data.some((r) => r.provisional);
 
   const columns = [
     {
@@ -23,6 +24,12 @@ export default function Ranking() {
       render: (r) => (
         <div>
           <span className="font-semibold">{r.nombre}</span>
+          {r.provisional && (
+            <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-rose-500/15 px-2 py-0.5 align-middle text-[10px] font-semibold text-rose-500">
+              <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-rose-500" />
+              +{r.puntos_en_vivo} en vivo
+            </span>
+          )}
           {/* Detalle compacto solo en móvil */}
           <span className="mt-0.5 block text-xs text-slate-500 sm:hidden">
             {r.aciertos_exactos} exactos · {r.partidos_acertados} aciertos
@@ -36,7 +43,15 @@ export default function Ranking() {
       header: "Puntos",
       className: "text-center",
       render: (r) => (
-        <span className="badge bg-brand-500/15 text-brand-400">{r.puntos_totales}</span>
+        <span
+          className={`badge ${
+            r.provisional
+              ? "bg-rose-500/15 text-rose-500"
+              : "bg-brand-500/15 text-brand-400"
+          }`}
+        >
+          {r.puntos_totales}
+        </span>
       ),
     },
     {
@@ -67,6 +82,12 @@ export default function Ranking() {
         <div>
           <h1 className="text-2xl font-extrabold">Ranking</h1>
           <p className="text-sm text-slate-500">Clasificación general del concurso.</p>
+          {hayEnVivo && (
+            <p className="mt-1 flex items-center gap-1.5 text-xs font-medium text-rose-500">
+              <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-rose-500" />
+              Incluye puntos provisionales de partidos en vivo (pueden cambiar).
+            </p>
+          )}
         </div>
         <a
           href={endpoints.exportUrl("ranking.xlsx")}
