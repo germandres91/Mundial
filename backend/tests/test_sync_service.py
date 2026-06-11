@@ -216,6 +216,51 @@ def test_live_match_gives_provisional_points(db):
     assert rows["Martin"].posicion == 1
 
 
+def test_sync_scores_when_result_arrives_after_finished(db):
+    """Si el marcador llega cuando el partido ya estaba finalizado, igual puntúa.
+
+    Reproduce el caso del tier gratuito: el partido se marcó FINISHED sin
+    marcador y, en un sync posterior, la API recién entrega el resultado.
+    """
+    ExcelService(db).import_rules(path="__none__")
+
+    # Partido propio ya FINALIZADO pero sin marcador (lo que pasó en producción)
+    own = MatchRepository(db).create(
+        fifa_id="WC-A-1",
+        local="México",
+        visitante="Sudáfrica",
+        estado=MatchStatus.FINISHED,
+    )
+    participant = Participant(nombre="Martin", email="martin@test.com")
+    db.add(participant)
+    db.commit()
+    db.add(
+        Prediction(participant_id=participant.id, match_id=own.id, pred_local=2, pred_visitante=0)
+    )
+    db.commit()
+
+    # La API ahora sí entrega el resultado final 2-0
+    final = ProviderMatch(
+        fifa_id="537327",
+        local="Mexico",
+        visitante="South Africa",
+        goles_local=2,
+        goles_visitante=0,
+        estado=MatchStatus.FINISHED,
+    )
+    SyncService(db, provider=FakeProvider([final])).sync()
+
+    refreshed = MatchRepository(db).get(own.id)
+    assert refreshed.goles_local == 2
+    assert refreshed.goles_visitante == 0
+
+    from app.repositories.ranking_repository import RankingRepository
+
+    ranking = RankingRepository(db).get(participant.id)
+    assert ranking is not None
+    assert ranking.puntos_totales == 5  # marcador exacto definitivo
+
+
 def test_sync_skips_unknown_matches(db):
     """Partidos de la API que no corresponden al torneo se omiten (no se crean)."""
     ExcelService(db).import_rules(path="__none__")

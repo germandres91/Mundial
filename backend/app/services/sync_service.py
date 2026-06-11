@@ -258,13 +258,16 @@ class SyncService:
         live_marked = self._mark_live_by_schedule()
         self.db.commit()
 
-        # Recalcula el ranking si finalizó algún partido o si hay partidos en
-        # vivo con marcador (para reflejar los puntos provisionales).
-        live_with_score = any(
+        # Recalcula el ranking si existe cualquier partido (finalizado o en
+        # vivo) con marcador. Así se refleja tanto el puntaje definitivo como el
+        # provisional, incluso si el marcador llega después de que el partido ya
+        # estaba marcado como finalizado.
+        scored_exists = any(
             m.goles_local is not None and m.goles_visitante is not None
-            for m in self.matches.list(estado=MatchStatus.LIVE)
+            for m in self.matches.list()
+            if m.estado in (MatchStatus.FINISHED, MatchStatus.LIVE)
         )
-        if newly_finished or live_with_score:
+        if newly_finished or scored_exists:
             RankingService(self.db).recalculate()
 
         self.audit.log(
