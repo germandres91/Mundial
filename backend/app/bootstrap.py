@@ -36,6 +36,11 @@ def bootstrap() -> None:
             logger.exception("No se pudo asegurar el administrador inicial")
 
         try:
+            AuthService(db).ensure_seed_users()
+        except Exception:  # noqa: BLE001
+            logger.exception("No se pudieron crear los usuarios semilla")
+
+        try:
             ExcelService(db).import_rules()
         except Exception:  # noqa: BLE001
             logger.exception("No se pudieron importar las reglas")
@@ -47,9 +52,12 @@ def bootstrap() -> None:
         except Exception:  # noqa: BLE001
             logger.exception("No se pudo crear el calendario inicial")
 
-        # Carga el participante inicial desde su formulario
+        # Carga el participante inicial (German) desde su formulario
         try:
-            if not ParticipantRepository(db).list():
+            german = ParticipantRepository(db).get_by_email(
+                "german.andres.bello.garcia@mundial2026.com"
+            )
+            if german is None:
                 formulario = resolve_path("data/formulario_german_bello.xlsm")
                 if formulario.exists():
                     ParticipantImportService(db).import_formulario(
@@ -57,9 +65,14 @@ def bootstrap() -> None:
                         nombre="German Andres Bello Garcia",
                         email="german.andres.bello.garcia@mundial2026.com",
                     )
-                    RankingService(db).recalculate()
         except Exception:  # noqa: BLE001
             logger.exception("No se pudo importar el formulario inicial")
+
+        # Carga los formularios de los demás participantes (idempotente)
+        try:
+            ParticipantImportService(db).import_seed_formularios()
+        except Exception:  # noqa: BLE001
+            logger.exception("No se pudieron importar los formularios semilla")
 
         # Normaliza el bonus de posiciones según el resultado real vigente.
         # Corrige datos antiguos que pudieran tener puntos preasignados.

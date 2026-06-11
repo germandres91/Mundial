@@ -1,9 +1,11 @@
 """Servicio de autenticación de usuarios."""
 from __future__ import annotations
 
+import json
+
 from sqlalchemy.orm import Session
 
-from app.core.config import settings
+from app.core.config import resolve_path, settings
 from app.core.logging import get_logger
 from app.core.security import create_access_token, hash_password, verify_password
 from app.models.user import User, UserRole
@@ -57,6 +59,48 @@ class AuthService:
         user.hashed_password = hash_password(new_password)
         self.db.commit()
         return user
+
+    def ensure_seed_users(self) -> int:
+        """Crea usuarios de acceso predefinidos desde data/users_seed.json.
+
+        Es idempotente: omite los que ya existen (por email) y no toca sus
+        contraseñas. Los usuarios se crean con rol PARTICIPANT (solo lectura).
+        Devuelve cuántos usuarios nuevos se crearon.
+        """
+        path = resolve_path("data/users_seed.json")
+        if not path.exists():
+            return 0
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except Exception:  # noqa: BLE001
+            logger.exception("No se pudo leer users_seed.json")
+            return 0
+
+        created = 0
+        for item in payload.get("usuarios", []):
+            email = str(item.get("email", "")).strip().lower()
+            password = str(item.get("password", "")).strip()
+            nombre = str(item.get("nombre", "")).strip() or email.split("@")[0]
+            if not email or not password:
+                continue
+            if self.users.get_by_email(email):
+                continue
+            try:
+                self.register(
+                    email=email,
+                    nombre=nombre,
+                    password=password,
+                    role=UserRole.PARTICIPANT,
+                )
+                created += 1
+            except ValueError:
+                self.db.rollback()
+            except Exception:  # noqa: BLE001
+                self.db.rollback()
+                logger.exception("No se pudo crear el usuario semilla: %s", email)
+        if created:
+            logger.info("Usuarios semilla creados: %d", created)
+        return created
 
     def ensure_first_admin(self) -> None:
         """Crea/asegura el usuario administrador inicial de forma idempotente.

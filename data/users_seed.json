@@ -1,0 +1,10 @@
+{
+  "usuarios": [
+    {"nombre": "Andres Miranda", "email": "andres.miranda@cgr-bogota.com", "password": "Andres1234"},
+    {"nombre": "Cristian Castillo", "email": "profesional.geotecnia@cgr-bogota.com", "password": "Cris1234"},
+    {"nombre": "Martin Alv", "email": "martin_alex25@hotmail.com", "password": "Martin1234"},
+    {"nombre": "Juliana", "email": "Mjlizcanod@gmail.com", "password": "Juli1234"},
+    {"nombre": "Ivan Pedraza", "email": "ipedrazab@gmail.com", "password": "Ivan1234"},
+    {"nombre": "Roger", "email": "coordinador.financiero@cgr-bogota.com", "password": "Roger1234"}
+  ]
+}

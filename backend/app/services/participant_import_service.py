@@ -1,11 +1,13 @@
 """Importa un participante completo (predicciones + top-4) desde el formulario Excel."""
 from __future__ import annotations
 
+import json
 import re
 import unicodedata
 
 from sqlalchemy.orm import Session
 
+from app.core.config import resolve_path
 from app.core.logging import get_logger
 from app.models.match import MatchStatus
 from app.repositories.match_repository import MatchRepository
@@ -15,6 +17,11 @@ from app.repositories.prediction_repository import PredictionRepository
 from app.services.formulario_parser import ParsedFormulario, parse_formulario
 
 logger = get_logger(__name__)
+
+
+def _norm_name(value: str) -> str:
+    base = unicodedata.normalize("NFKD", value or "").encode("ascii", "ignore").decode()
+    return re.sub(r"[^a-z0-9]+", " ", base.lower()).strip()
 
 
 def _slug_email(nombre: str) -> str:
@@ -96,3 +103,53 @@ class ParticipantImportService:
         }
         logger.info("Formulario importado: %s", result)
         return result
+
+    def _email_map_from_users_seed(self) -> dict[str, str]:
+        """Mapa nombre-normalizado -> email desde data/users_seed.json."""
+        path = resolve_path("data/users_seed.json")
+        if not path.exists():
+            return {}
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except Exception:  # noqa: BLE001
+            return {}
+        mapping: dict[str, str] = {}
+        for item in payload.get("usuarios", []):
+            nombre = _norm_name(str(item.get("nombre", "")))
+            email = str(item.get("email", "")).strip().lower()
+            if nombre and email:
+                mapping[nombre] = email
+        return mapping
+
+    def import_seed_formularios(self) -> dict:
+        """Importa todos los formularios de data/formularios/ (idempotente).
+
+        El nombre de archivo es el nombre del participante. El email se toma de
+        users_seed.json (si coincide el nombre) para enlazar con su cuenta; si
+        no, se genera. Omite participantes que ya tienen predicciones.
+        """
+        folder = resolve_path("data/formularios")
+        if not folder.exists():
+            return {"importados": 0, "omitidos": 0}
+
+        email_map = self._email_map_from_users_seed()
+        importados = 0
+        omitidos = 0
+        detalle: list[str] = []
+        for file in sorted(folder.glob("*.xlsm")) + sorted(folder.glob("*.xlsx")):
+            nombre = file.stem.strip()
+            email = email_map.get(_norm_name(nombre)) or _slug_email(nombre)
+
+            existing = self.participants.get_by_email(email)
+            if existing and self.predictions.list(participant_id=existing.id):
+                omitidos += 1
+                continue
+            try:
+                res = self.import_formulario(str(file), nombre=nombre, email=email)
+                importados += 1
+                detalle.append(f"{nombre}: {res['predicciones_importadas']} preds")
+            except Exception:  # noqa: BLE001
+                logger.exception("No se pudo importar formulario: %s", file.name)
+
+        logger.info("Formularios semilla importados: %d (omitidos %d)", importados, omitidos)
+        return {"importados": importados, "omitidos": omitidos, "detalle": detalle}

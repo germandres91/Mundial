@@ -1,11 +1,17 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Bracket from "../components/Bracket";
 import GroupCard from "../components/GroupCard";
 import KnockoutFlow from "../components/KnockoutFlow";
-import MatchCard from "../components/MatchCard";
+import LiveMatchCard from "../components/LiveMatchCard";
 import StatCard from "../components/StatCard";
 import { Skeleton } from "../components/Skeleton";
-import { useBracket, useDashboard, useMatches, useParticipants } from "../hooks/useApi";
+import {
+  useBracket,
+  useDashboard,
+  useMatches,
+  useParticipants,
+  usePredictions,
+} from "../hooks/useApi";
 
 export default function Home() {
   const { data: participants } = useParticipants();
@@ -13,6 +19,16 @@ export default function Home() {
   const { data: dashboard } = useDashboard();
   const { data: bracket, isLoading } = useBracket(participantId);
   const { data: liveMatches } = useMatches({ estado: "LIVE" });
+  const { data: predictions } = usePredictions({ participant_id: participantId });
+
+  // Mapa de predicciones del participante por match_id
+  const predByMatch = useMemo(() => {
+    const map = {};
+    (predictions || []).forEach((p) => {
+      map[p.match_id] = p;
+    });
+    return map;
+  }, [predictions]);
 
   // Selecciona automáticamente el primer participante
   useEffect(() => {
@@ -112,7 +128,12 @@ export default function Home() {
           </div>
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {liveMatches.map((m) => (
-              <MatchCard key={m.id} match={m} />
+              <LiveMatchCard
+                key={m.id}
+                match={m}
+                prediction={predByMatch[m.id]}
+                participantName={selected?.nombre}
+              />
             ))}
           </div>
         </section>
