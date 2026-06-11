@@ -97,11 +97,12 @@ class TournamentResetService:
 
         positions = PositionPredictionRepository(self.db)
         for item in payload.get("top4", []):
+            # puntos=0: el bonus se otorga solo al registrar las posiciones reales.
             positions.upsert(
                 participant_id=participant.id,
                 posicion=int(item["posicion"]),
                 equipo=item["equipo"],
-                puntos=int(item.get("puntos", 0)),
+                puntos=0,
             )
 
         self.db.commit()

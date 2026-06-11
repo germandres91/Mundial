@@ -77,11 +77,13 @@ class ParticipantImportService:
             imported += 1
 
         for pos in parsed.posiciones:
+            # El bonus se calcula solo contra el resultado real (FinalPosition),
+            # nunca se preasigna desde el formulario.
             self.positions.upsert(
                 participant_id=participant.id,
                 posicion=pos.posicion,
                 equipo=pos.equipo,
-                puntos=pos.puntos,
+                puntos=0,
             )
 
         self.db.commit()

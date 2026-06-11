@@ -54,42 +54,46 @@
 
 .tb-scroll {
   overflow: auto;
-  height: 760px;
-  max-height: 80vh;
   -webkit-overflow-scrolling: touch;
 }
 .tb {
   display: flex;
   align-items: stretch;
   min-width: max-content;
-  height: 100%;
+  /* Altura fija para que TODAS las columnas midan igual y los conectores
+     queden alineados. 16 llaves en la 1ª ronda => ~47px por llave (sin
+     solaparse). */
+  height: 760px;
 }
 .tb-col {
   display: flex;
   flex-direction: column;
   min-width: 196px;
 }
+.tb-match {
+  /* Evita que las tarjetas se compriman y se solapen */
+  min-height: 38px;
+}
 
 /* Compacta el cuadro en pantallas pequeñas (móvil) */
 @media (max-width: 640px) {
-  .tb-scroll {
-    height: 560px;
-    max-height: 70vh;
+  .tb {
+    height: 720px;
   }
   .tb-col {
-    min-width: 150px;
+    min-width: 158px;
   }
   .tb-body {
-    padding-right: 24px;
+    padding-right: 22px;
   }
   .tb-col:not(:last-child) .tb-match::after,
   .tb-col:not(:last-child) .tb-match::before,
   .tb-line-in {
-    right: -12px;
-    width: 12px;
+    right: -11px;
+    width: 11px;
   }
   .tb-line-in {
-    left: -12px;
+    left: -11px;
   }
 }
 .tb-col-title {

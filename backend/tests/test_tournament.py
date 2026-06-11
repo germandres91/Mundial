@@ -84,7 +84,8 @@ def test_import_formulario_creates_everything(db, formulario_bytes):
     positions = PositionPredictionRepository(db).list_for(p.id)
     assert len(positions) == 2
     assert positions[0].equipo == "Mexico"
-    assert positions[0].puntos == 10
+    # El bonus inicia en 0: se otorga solo al registrar las posiciones reales.
+    assert positions[0].puntos == 0
 
 
 def test_bracket_predicted_standings(db, formulario_bytes):

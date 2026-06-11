@@ -5,10 +5,10 @@ from sqlalchemy.orm import Session
 
 from app.core.logging import get_logger
 from app.repositories.participant_repository import ParticipantRepository
-from app.repositories.position_prediction_repository import PositionPredictionRepository
 from app.repositories.ranking_repository import RankingRepository
 from app.repositories.score_repository import ScoreRepository
 from app.schemas.ranking import RankingRow
+from app.services.scoring_service import ScoringService
 
 logger = get_logger(__name__)
 
@@ -21,15 +21,10 @@ class RankingService:
         self.scores = ScoreRepository(db)
         self.rankings = RankingRepository(db)
         self.participants = ParticipantRepository(db)
-        self.positions = PositionPredictionRepository(db)
 
     def _position_points(self) -> dict[int, int]:
-        """Suma de puntos por aciertos de posiciones finales, por participante."""
-        acc: dict[int, int] = {}
-        for pred in self.positions.list_all():
-            if pred.puntos:
-                acc[pred.participant_id] = acc.get(pred.participant_id, 0) + pred.puntos
-        return acc
+        """Bonus de posiciones por participante (solo contra resultados reales)."""
+        return ScoringService(self.db).position_points_by_participant()
 
     def recalculate(self) -> list[RankingRow]:
         """Recalcula y persiste el ranking de todos los participantes.

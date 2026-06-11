@@ -145,13 +145,41 @@ class ScoringService:
         self.db.commit()
         return total
 
+    def position_points_by_participant(self) -> dict[int, int]:
+        """Bonus de posiciones por participante, calculado contra el resultado real.
+
+        Solo otorga puntos por los puestos que ya tienen resultado oficial
+        registrado (FinalPosition). Si aún no se registra ningún puesto,
+        devuelve un diccionario vacío (bonus 0 para todos). Esto permite el
+        otorgamiento parcial: p. ej. 3° y 4° tras semifinales y 1° y 2° tras
+        la final.
+        """
+        real = self.final_positions.as_map()  # {1: equipo, ...}
+        if not real:
+            return {}
+        real_codes = {pos: team_code(eq) or eq.lower() for pos, eq in real.items()}
+        points = self._points_map()
+
+        acc: dict[int, int] = {}
+        for pred in self.positions.list_all():
+            real_code = real_codes.get(pred.posicion)
+            if not real_code:
+                continue
+            pred_code = team_code(pred.equipo) or pred.equipo.lower()
+            if pred_code == real_code:
+                acc[pred.participant_id] = acc.get(pred.participant_id, 0) + points.get(
+                    f"POS_{pred.posicion}", 0
+                )
+        return acc
+
     def score_positions(self) -> int:
         """Puntúa los pronósticos de posiciones finales (1° a 4°).
 
         Compara el equipo pronosticado por cada participante para cada puesto
-        contra el resultado oficial (FinalPosition). Si coincide (sin importar
-        idioma del nombre), asigna los puntos de la regla POS_n. Devuelve el
-        total de aciertos registrados.
+        contra el resultado oficial (FinalPosition) y persiste los puntos en
+        cada pronóstico (para mostrarlos por participante). Si un puesto aún no
+        tiene resultado, ese pronóstico queda en 0. Devuelve el total de
+        aciertos registrados.
         """
         real = self.final_positions.as_map()  # {1: equipo, ...}
         real_codes = {pos: team_code(eq) or eq.lower() for pos, eq in real.items()}
@@ -159,14 +187,14 @@ class ScoringService:
 
         aciertos = 0
         for pred in self.positions.list_all():
-            real_eq = real.get(pred.posicion)
-            if not real_eq:
+            real_code = real_codes.get(pred.posicion)
+            if not real_code:
                 # Aún no hay resultado oficial para ese puesto.
                 if pred.puntos:
                     pred.puntos = 0
                 continue
             pred_code = team_code(pred.equipo) or pred.equipo.lower()
-            if pred_code == real_codes.get(pred.posicion):
+            if pred_code == real_code:
                 pred.puntos = points.get(f"POS_{pred.posicion}", 0)
                 aciertos += 1
             else:

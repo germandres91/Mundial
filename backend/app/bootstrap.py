@@ -10,6 +10,7 @@ from app.services.auth_service import AuthService
 from app.services.excel_service import ExcelService
 from app.services.participant_import_service import ParticipantImportService
 from app.services.ranking_service import RankingService
+from app.services.scoring_service import ScoringService
 from app.services.tournament_service import TournamentService
 
 logger = get_logger(__name__)
@@ -59,5 +60,14 @@ def bootstrap() -> None:
                     RankingService(db).recalculate()
         except Exception:  # noqa: BLE001
             logger.exception("No se pudo importar el formulario inicial")
+
+        # Normaliza el bonus de posiciones según el resultado real vigente.
+        # Corrige datos antiguos que pudieran tener puntos preasignados.
+        try:
+            ScoringService(db).score_positions()
+            db.commit()
+            RankingService(db).recalculate()
+        except Exception:  # noqa: BLE001
+            logger.exception("No se pudo normalizar el bonus de posiciones")
     finally:
         db.close()
