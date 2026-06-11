@@ -129,7 +129,11 @@ class SyncService:
             match.goles_visitante = gv
         if pm.fecha:
             match.fecha = pm.fecha
-        match.estado = SyncService._resolve_status(pm)
+        # No permitir que el estado retroceda (p. ej. una lectura "vacía" que
+        # reporte SCHEDULED no debe revertir un partido ya FINISHED/LIVE).
+        new_status = SyncService._resolve_status(pm)
+        if _STATUS_RANK.get(new_status, 0) >= _STATUS_RANK.get(match.estado, 0):
+            match.estado = new_status
 
     def _upsert_match(self, pm: ProviderMatch):
         match = self.matches.get_by_fifa_id(pm.fifa_id) if pm.fifa_id else None
@@ -192,6 +196,17 @@ class SyncService:
         kickoff = self._as_utc(pm.fecha)
         return kickoff <= now < kickoff + timedelta(hours=2, minutes=15)
 
+    def _needs_score(self, pm: ProviderMatch) -> bool:
+        """¿Este partido debería tener marcador pero la lectura vino vacía?
+
+        Cubre tanto partidos en juego como ya finalizados sin goles (el tier
+        gratuito a veces reporta FINISHED sin `fullTime`). En esos casos vale la
+        pena reintentar otra lectura para capturar el marcador real.
+        """
+        if pm.goles_local is not None and pm.goles_visitante is not None:
+            return False
+        return pm.estado == MatchStatus.FINISHED or self._should_be_live(pm)
+
     def _collect_provider_matches(
         self, attempts: int = 3, pause: float = 4.0
     ) -> list[ProviderMatch]:
@@ -208,11 +223,8 @@ class SyncService:
             for pm in batch:
                 key = self._pm_key(pm)
                 merged[key] = self._merge_pm(merged.get(key), pm)
-            # ¿Hay algún partido que debería estar en vivo y aún sin marcador?
-            pending = any(
-                self._should_be_live(pm) and pm.goles_local is None
-                for pm in merged.values()
-            )
+            # ¿Hay algún partido en juego o finalizado que aún no tenga marcador?
+            pending = any(self._needs_score(pm) for pm in merged.values())
             if not pending or i == attempts - 1:
                 break
             time.sleep(pause)

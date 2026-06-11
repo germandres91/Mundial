@@ -21,6 +21,8 @@ export default function Predictions() {
   const { data: predictions } = usePredictions({ participant_id: participantId || null });
   const [drafts, setDrafts] = useState({});
 
+  const [resultDrafts, setResultDrafts] = useState({});
+
   const predMap = useMemo(() => {
     const map = {};
     (predictions || []).forEach((p) => (map[p.match_id] = p));
@@ -32,6 +34,15 @@ export default function Predictions() {
     onError: (e) =>
       toast.error(e.response?.data?.detail || "No se pudo guardar la predicción"),
   });
+
+  const saveResult = useMutationWithRefresh(
+    ({ id, payload }) => endpoints.setResult(id, payload),
+    {
+      onSuccess: () => toast.success("Resultado registrado y ranking actualizado"),
+      onError: (e) =>
+        toast.error(e.response?.data?.detail || "No se pudo registrar el resultado"),
+    }
+  );
 
   const handleSave = (matchId) => {
     if (!participantId) return toast.error("Selecciona un participante");
@@ -45,8 +56,21 @@ export default function Predictions() {
     });
   };
 
+  const handleSaveResult = (match) => {
+    const draft = resultDrafts[match.id] || {};
+    const local = Number(draft.local ?? match.goles_local ?? 0);
+    const visitante = Number(draft.visitante ?? match.goles_visitante ?? 0);
+    saveResult.mutate({
+      id: match.id,
+      payload: { goles_local: local, goles_visitante: visitante, estado: "FINISHED" },
+    });
+  };
+
   const setDraft = (matchId, side, value) =>
     setDrafts((d) => ({ ...d, [matchId]: { ...d[matchId], [side]: value } }));
+
+  const setResultDraft = (matchId, side, value) =>
+    setResultDrafts((d) => ({ ...d, [matchId]: { ...d[matchId], [side]: value } }));
 
   const columns = [
     {
@@ -61,14 +85,82 @@ export default function Predictions() {
     },
     { key: "estado", header: "Estado", render: (m) => <StatusBadge status={m.estado} /> },
     {
+      key: "resultado",
+      header: "Resultado",
+      render: (m) => {
+        const hasScore = m.goles_local != null && m.goles_visitante != null;
+        const isFinished = m.estado === "FINISHED";
+        const isLive = m.estado === "LIVE";
+        // Vista de admin: permitir registrar/corregir el marcador real.
+        if (isAdmin && (isFinished || isLive)) {
+          return (
+            <div className="flex items-center gap-2">
+              <input
+                type="number"
+                min="0"
+                className="input w-14 text-center"
+                defaultValue={m.goles_local ?? ""}
+                onChange={(e) => setResultDraft(m.id, "local", e.target.value)}
+              />
+              <span className="text-slate-500">-</span>
+              <input
+                type="number"
+                min="0"
+                className="input w-14 text-center"
+                defaultValue={m.goles_visitante ?? ""}
+                onChange={(e) => setResultDraft(m.id, "visitante", e.target.value)}
+              />
+              <button
+                className="btn-primary px-2.5 py-1 text-xs"
+                disabled={saveResult.isPending}
+                onClick={() => handleSaveResult(m)}
+                title="Guardar marcador real y recalcular ranking"
+              >
+                ✓
+              </button>
+            </div>
+          );
+        }
+        if (!hasScore) return <span className="text-slate-400">—</span>;
+        return (
+          <span
+            className={`font-bold tabular-nums ${
+              isLive ? "text-rose-500" : "text-emerald-500"
+            }`}
+          >
+            {m.goles_local} - {m.goles_visitante}
+          </span>
+        );
+      },
+    },
+    {
       key: "pred",
       header: "Predicción",
       render: (m) => {
         const existing = predMap[m.id];
+        const hasScore = m.goles_local != null && m.goles_visitante != null;
+        const acierto =
+          existing && hasScore
+            ? existing.pred_local === m.goles_local &&
+              existing.pred_visitante === m.goles_visitante
+              ? "exacto"
+              : Math.sign(existing.pred_local - existing.pred_visitante) ===
+                Math.sign(m.goles_local - m.goles_visitante)
+              ? "parcial"
+              : "fallo"
+            : null;
         if (!isAdmin) {
           return existing ? (
-            <span className="font-semibold tabular-nums">
-              {existing.pred_local} - {existing.pred_visitante}
+            <span className="flex items-center gap-2">
+              <span className="font-semibold tabular-nums">
+                {existing.pred_local} - {existing.pred_visitante}
+              </span>
+              {acierto === "exacto" && (
+                <span className="badge bg-emerald-500/15 text-emerald-500">Exacto</span>
+              )}
+              {acierto === "parcial" && (
+                <span className="badge bg-amber-500/15 text-amber-500">Acierto</span>
+              )}
             </span>
           ) : (
             <span className="text-slate-400">—</span>
@@ -124,8 +216,8 @@ export default function Predictions() {
         <h1 className="text-2xl font-extrabold">Predicciones</h1>
         <p className="text-sm text-slate-500">
           {isAdmin
-            ? "Registra los marcadores antes de que inicie cada partido."
-            : "Consulta las predicciones registradas por cada participante."}
+            ? "Registra las predicciones antes de cada partido y el marcador real cuando finalicen (columna Resultado)."
+            : "Consulta las predicciones registradas por cada participante y el resultado real de cada partido."}
         </p>
       </div>
 

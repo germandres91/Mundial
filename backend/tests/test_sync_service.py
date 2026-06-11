@@ -261,6 +261,38 @@ def test_sync_scores_when_result_arrives_after_finished(db):
     assert ranking.puntos_totales == 5  # marcador exacto definitivo
 
 
+def test_sync_does_not_regress_finished_to_scheduled(db):
+    """Una lectura vacía (TIMED/null) no debe revertir un partido ya FINISHED."""
+    ExcelService(db).import_rules(path="__none__")
+
+    own = MatchRepository(db).create(
+        fifa_id="WC-A-1",
+        local="México",
+        visitante="Sudáfrica",
+        goles_local=2,
+        goles_visitante=0,
+        fecha=datetime.now(timezone.utc) - timedelta(hours=5),
+        estado=MatchStatus.FINISHED,
+    )
+
+    # La API ahora reporta el partido como programado y sin marcador (flapping)
+    flapping = ProviderMatch(
+        fifa_id="537327",
+        local="Mexico",
+        visitante="South Africa",
+        fecha=datetime.now(timezone.utc) - timedelta(hours=5),
+        goles_local=None,
+        goles_visitante=None,
+        estado=MatchStatus.SCHEDULED,
+    )
+    SyncService(db, provider=FakeProvider([flapping])).sync()
+
+    refreshed = MatchRepository(db).get(own.id)
+    assert refreshed.estado == MatchStatus.FINISHED  # no regresó a SCHEDULED
+    assert refreshed.goles_local == 2  # el marcador se conserva
+    assert refreshed.goles_visitante == 0
+
+
 def test_sync_skips_unknown_matches(db):
     """Partidos de la API que no corresponden al torneo se omiten (no se crean)."""
     ExcelService(db).import_rules(path="__none__")
