@@ -88,7 +88,9 @@ export default function Home() {
             subtitle={
               liveMatch
                 ? hasScore(liveMatch)
-                  ? "Marcador actual"
+                  ? liveMatch.minuto
+                    ? `Marcador actual · ${liveMatch.minuto}`
+                    : "Marcador actual"
                   : "En juego · marcador al sincronizar"
                 : ""
             }

@@ -20,11 +20,11 @@ def test_factory_returns_espn():
     assert provider.name == "espn"
 
 
-def _espn_event(state: str, name: str, home_score, away_score) -> dict:
+def _espn_event(state: str, name: str, home_score, away_score, clock=None) -> dict:
     return {
         "id": "760415",
         "date": "2026-06-11T19:00Z",
-        "status": {"type": {"state": state, "name": name}},
+        "status": {"type": {"state": state, "name": name}, "displayClock": clock},
         "competitions": [
             {
                 "competitors": [
@@ -55,10 +55,19 @@ def test_espn_parse_finished_match():
 
 
 def test_espn_parse_in_progress_match():
-    pm = ESPNProvider._parse(_espn_event("in", "STATUS_IN_PROGRESS", "1", "0"))
+    pm = ESPNProvider._parse(_espn_event("in", "STATUS_IN_PROGRESS", "1", "0", clock="67'"))
     assert pm.estado == MatchStatus.LIVE
     assert pm.goles_local == 1
     assert pm.goles_visitante == 0
+    assert pm.minuto == "67'"
+
+
+def test_espn_minute_only_when_live():
+    """El minuto solo se expone en partidos en vivo, no en finalizados."""
+    finished = ESPNProvider._parse(
+        _espn_event("post", "STATUS_FULL_TIME", "2", "0", clock="90'+8'")
+    )
+    assert finished.minuto is None
 
 
 def test_espn_scheduled_match_has_no_score():

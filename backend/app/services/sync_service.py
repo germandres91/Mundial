@@ -134,6 +134,12 @@ class SyncService:
         new_status = SyncService._resolve_status(pm)
         if _STATUS_RANK.get(new_status, 0) >= _STATUS_RANK.get(match.estado, 0):
             match.estado = new_status
+        # El minuto solo aplica en vivo; se limpia al finalizar/programar.
+        if match.estado == MatchStatus.LIVE:
+            if pm.minuto:
+                match.minuto = pm.minuto
+        else:
+            match.minuto = None
 
     def _upsert_match(self, pm: ProviderMatch):
         match = self.matches.get_by_fifa_id(pm.fifa_id) if pm.fifa_id else None

@@ -43,6 +43,7 @@ class MatchOut(MatchBase):
     goles_local: int | None = None
     goles_visitante: int | None = None
     estado: MatchStatus
+    minuto: str | None = None
 
     @field_serializer("fecha")
     def _serialize_fecha(self, value: datetime | None) -> str | None:

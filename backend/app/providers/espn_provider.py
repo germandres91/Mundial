@@ -120,9 +120,17 @@ class ESPNProvider(BaseFootballProvider):
         if home is None or away is None:
             return None
 
-        status_type = (event.get("status") or {}).get("type") or {}
+        status = event.get("status") or {}
+        status_type = status.get("type") or {}
         estado = cls._resolve_status(status_type)
         started = estado in (MatchStatus.LIVE, MatchStatus.FINISHED)
+
+        # Minuto solo tiene sentido en vivo (p. ej. "45'", "90'+8'").
+        minuto = None
+        if estado == MatchStatus.LIVE:
+            clock = status.get("displayClock") or status.get("clock")
+            if clock:
+                minuto = str(clock).strip()
 
         utc = event.get("date")
         fecha = None
@@ -142,4 +150,5 @@ class ESPNProvider(BaseFootballProvider):
             goles_local=cls._parse_score(home.get("score"), started),
             goles_visitante=cls._parse_score(away.get("score"), started),
             estado=estado,
+            minuto=minuto,
         )

@@ -43,7 +43,7 @@ export default function LiveMatchCard({ match, prediction, participantName }) {
         </span>
         <span className="badge animate-pulse bg-rose-500/15 text-rose-400">
           <span className="mr-1 inline-block h-2 w-2 rounded-full bg-rose-500" />
-          EN VIVO
+          EN VIVO{match.minuto ? ` · ${match.minuto}` : ""}
         </span>
       </div>
 

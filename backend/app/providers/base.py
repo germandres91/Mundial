@@ -21,6 +21,8 @@ class ProviderMatch:
     goles_local: int | None = None
     goles_visitante: int | None = None
     estado: MatchStatus = MatchStatus.SCHEDULED
+    # Minuto de juego en vivo (texto, p. ej. "45'" o "90'+8'"), si el proveedor lo da.
+    minuto: str | None = None
 
 
 class BaseFootballProvider(ABC):

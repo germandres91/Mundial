@@ -35,6 +35,8 @@ class Match(Base):
     estado: Mapped[MatchStatus] = mapped_column(
         Enum(MatchStatus), default=MatchStatus.SCHEDULED, index=True
     )
+    # Minuto de juego en vivo (texto del proveedor, p. ej. "45'" o "90'+8'").
+    minuto: Mapped[str | None] = mapped_column(String(16))
 
     predictions: Mapped[list["Prediction"]] = relationship(  # noqa: F821
         back_populates="match", cascade="all, delete-orphan"

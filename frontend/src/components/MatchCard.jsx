@@ -48,7 +48,7 @@ export default function MatchCard({ match, onAction, actionLabel }) {
           {live && (
             <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-rose-500" />
           )}
-          {live ? "En juego · " : ""}
+          {live ? (match.minuto ? `En juego ${match.minuto} · ` : "En juego · ") : ""}
           {formatDate(match.fecha)}
         </span>
         {onAction && (
