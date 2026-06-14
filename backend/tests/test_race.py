@@ -46,6 +46,29 @@ def test_race_acumulado_por_partido(db, sample_participants):
     assert race.series[0].nombre == "Ana"
 
 
+def test_race_incluye_partidos_con_puntaje_aunque_no_finished(db, sample_participants):
+    """Un partido con puntaje pero estado no FINISHED igual aparece en la carrera."""
+    ana, _ = sample_participants
+    m = Match(
+        fifa_id="R-9",
+        grupo="A",
+        fase="Fase de grupos",
+        local="México",
+        visitante="Brasil",
+        estado=MatchStatus.SCHEDULED,
+    )
+    db.add(m)
+    db.commit()
+    db.add(Score(participant_id=ana.id, match_id=m.id, puntos=4))
+    db.commit()
+
+    race = DashboardService(db).race_to_cup()
+
+    assert len(race.partidos) == 1
+    series = {s.nombre: s.puntos for s in race.series}
+    assert series["Ana"] == [4]
+
+
 def test_race_sin_partidos_finalizados(db, sample_participants):
     race = DashboardService(db).race_to_cup()
     assert race.partidos == []

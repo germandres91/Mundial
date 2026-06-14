@@ -100,12 +100,24 @@ class DashboardService:
     def race_to_cup(self) -> RaceResponse:
         """Puntaje acumulado de cada participante partido a partido.
 
-        El eje X son los partidos jugados (FINISHED) en orden cronológico y el
-        eje Y el puntaje acumulado. Permite ver cómo cambia el liderato a lo
-        largo del torneo.
+        El eje X son los partidos jugados (con puntaje registrado o en estado
+        FINISHED) en orden cronológico y el eje Y el puntaje acumulado. Permite
+        ver cómo cambia el liderato a lo largo del torneo.
         """
+        all_scores = self.scores.list()
+        score_map: dict[tuple[int, int], int] = {}
+        scored_match_ids: set[int] = set()
+        for s in all_scores:
+            score_map[(s.participant_id, s.match_id)] = s.puntos
+            scored_match_ids.add(s.match_id)
+
+        # Un partido cuenta si ya tiene puntaje registrado o quedó finalizado.
+        # Así la carrera se dibuja aunque el estado del partido no se haya
+        # actualizado a FINISHED pero ya existan puntajes calculados.
         played = [
-            m for m in self.matches.list() if m.estado == MatchStatus.FINISHED
+            m
+            for m in self.matches.list()
+            if m.id in scored_match_ids or m.estado == MatchStatus.FINISHED
         ]
         partidos = [
             RaceMatch(
@@ -117,10 +129,6 @@ class DashboardService:
             )
             for i, m in enumerate(played, start=1)
         ]
-
-        score_map: dict[tuple[int, int], int] = {}
-        for s in self.scores.list():
-            score_map[(s.participant_id, s.match_id)] = s.puntos
 
         series: list[RaceSeries] = []
         for p in self.participants.list():
