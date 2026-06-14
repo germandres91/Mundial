@@ -59,6 +59,13 @@ export const useStatsHits = () =>
 export const useStatsPhases = () =>
   useQuery({ queryKey: ["stats", "phases"], queryFn: endpoints.statsPhases });
 
+export const useStatsRace = () =>
+  useQuery({
+    queryKey: ["stats", "race"],
+    queryFn: endpoints.statsRace,
+    refetchInterval: AUTO_REFRESH,
+  });
+
 export const useParticipantTop4 = (id) =>
   useQuery({
     queryKey: ["top4", id],

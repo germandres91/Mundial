@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.schemas.dashboard import ChartPoint, ParticipantStats
+from app.schemas.dashboard import ChartPoint, ParticipantStats, RaceResponse
 from app.services.dashboard_service import DashboardService
 
 router = APIRouter()
@@ -21,6 +21,12 @@ def hits_per_participant(db: Session = Depends(get_db)) -> list[ChartPoint]:
 def points_per_phase(db: Session = Depends(get_db)) -> list[ChartPoint]:
     """Rendimiento (puntos) por fase del torneo."""
     return DashboardService(db).points_per_phase()
+
+
+@router.get("/race", response_model=RaceResponse)
+def race_to_cup(db: Session = Depends(get_db)) -> RaceResponse:
+    """Carrera al mundial: puntaje acumulado de cada jugador partido a partido."""
+    return DashboardService(db).race_to_cup()
 
 
 @router.get("/participant/{participant_id}", response_model=ParticipantStats)

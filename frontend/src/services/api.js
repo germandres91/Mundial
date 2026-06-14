@@ -68,6 +68,7 @@ export const endpoints = {
 
   statsHits: () => api.get("/stats/hits").then((r) => r.data),
   statsPhases: () => api.get("/stats/phases").then((r) => r.data),
+  statsRace: () => api.get("/stats/race").then((r) => r.data),
   participantStats: (id) =>
     api.get(`/stats/participant/${id}`).then((r) => r.data),
 

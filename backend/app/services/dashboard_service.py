@@ -11,7 +11,14 @@ from app.repositories.participant_repository import ParticipantRepository
 from app.repositories.prediction_repository import PredictionRepository
 from app.repositories.ranking_repository import RankingRepository
 from app.repositories.score_repository import ScoreRepository
-from app.schemas.dashboard import ChartPoint, DashboardSummary, ParticipantStats
+from app.schemas.dashboard import (
+    ChartPoint,
+    DashboardSummary,
+    ParticipantStats,
+    RaceMatch,
+    RaceResponse,
+    RaceSeries,
+)
 from app.schemas.match import MatchOut
 from app.schemas.ranking import RankingRow
 
@@ -89,3 +96,43 @@ class DashboardService:
             fase = score.match.fase if score.match else "General"
             por_fase[fase or "General"] += score.puntos
         return [ChartPoint(label=k, value=v) for k, v in por_fase.items()]
+
+    def race_to_cup(self) -> RaceResponse:
+        """Puntaje acumulado de cada participante partido a partido.
+
+        El eje X son los partidos jugados (FINISHED) en orden cronológico y el
+        eje Y el puntaje acumulado. Permite ver cómo cambia el liderato a lo
+        largo del torneo.
+        """
+        played = [
+            m for m in self.matches.list() if m.estado == MatchStatus.FINISHED
+        ]
+        partidos = [
+            RaceMatch(
+                orden=i,
+                match_id=m.id,
+                etiqueta=f"{m.local} vs {m.visitante}",
+                fase=m.fase or "",
+                fecha=m.fecha,
+            )
+            for i, m in enumerate(played, start=1)
+        ]
+
+        score_map: dict[tuple[int, int], int] = {}
+        for s in self.scores.list():
+            score_map[(s.participant_id, s.match_id)] = s.puntos
+
+        series: list[RaceSeries] = []
+        for p in self.participants.list():
+            acumulado = 0
+            puntos: list[int] = []
+            for m in played:
+                acumulado += score_map.get((p.id, m.id), 0)
+                puntos.append(acumulado)
+            series.append(
+                RaceSeries(participant_id=p.id, nombre=p.nombre, puntos=puntos)
+            )
+
+        # Ordena las series por puntaje final (desc) para una leyenda intuitiva.
+        series.sort(key=lambda s: s.puntos[-1] if s.puntos else 0, reverse=True)
+        return RaceResponse(partidos=partidos, series=series)
