@@ -208,12 +208,47 @@ function UsersManager() {
 
   const roleLabel = (r) => (r === "ADMIN" ? "Administrador" : "Solo lectura");
 
+  const [saving, setSaving] = useState(false);
+  const handleBackup = async () => {
+    setSaving(true);
+    try {
+      const res = await endpoints.createBackup();
+      const blob = await endpoints.downloadBackup();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "backup.json";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      toast.success(
+        `Respaldo guardado: ${res.usuarios} usuarios, ${res.predicciones} predicciones. Se descargó backup.json`
+      );
+    } catch (e) {
+      toast.error(e.response?.data?.detail || "No se pudo guardar el respaldo");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <div className="card">
-      <h2 className="mb-1 font-semibold">Usuarios con acceso</h2>
+      <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
+        <h2 className="font-semibold">Usuarios con acceso</h2>
+        <button className="btn-primary" disabled={saving} onClick={handleBackup}>
+          {saving ? "Guardando…" : "💾 Guardar usuarios"}
+        </button>
+      </div>
       <p className="mb-3 text-sm text-slate-500">
         Crea cuentas para quienes compartirás el link. Por defecto son de
         <strong> solo lectura</strong>; solo el administrador puede editar.
+        <br />
+        <span className="text-xs">
+          <strong>Guardar usuarios</strong> crea un respaldo (cuentas, correos,
+          predicciones y top 4) y descarga <code>backup.json</code>. Envíalo para
+          dejarlo permanente y que no se pierda en futuras mejoras.
+        </span>
       </p>
 
       <div className="mb-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-5">

@@ -1,0 +1,235 @@
+"""Respaldo y restauración de datos de usuarios y predicciones.
+
+Exporta el estado actual (cuentas de acceso, participantes, predicciones de
+partidos y pronósticos de los 4 puestos) a un JSON versionado en `data/`. Ese
+archivo se restaura de forma idempotente en cada arranque, de modo que los
+datos sobreviven a despliegues y mejoras de la aplicación.
+
+Las referencias se guardan por claves estables (email del usuario/participante
+y `fifa_id`/equipos del partido), no por IDs de base de datos, para que la
+restauración funcione aunque la base se regenere desde cero.
+"""
+from __future__ import annotations
+
+import json
+from datetime import datetime, timezone
+
+from sqlalchemy.orm import Session
+
+from app.core.config import resolve_path
+from app.core.logging import get_logger
+from app.models.user import UserRole
+from app.repositories.match_repository import MatchRepository
+from app.repositories.participant_repository import ParticipantRepository
+from app.repositories.position_prediction_repository import PositionPredictionRepository
+from app.repositories.prediction_repository import PredictionRepository
+from app.repositories.user_repository import UserRepository
+from app.utils.teams import team_code
+
+logger = get_logger(__name__)
+
+BACKUP_VERSION = 1
+DEFAULT_BACKUP_PATH = "data/backup.json"
+
+
+class BackupService:
+    """Crea y restaura respaldos del estado de usuarios y predicciones."""
+
+    def __init__(self, db: Session) -> None:
+        self.db = db
+        self.users = UserRepository(db)
+        self.participants = ParticipantRepository(db)
+        self.predictions = PredictionRepository(db)
+        self.positions = PositionPredictionRepository(db)
+        self.matches = MatchRepository(db)
+
+    # ------------------------------------------------------------------ export
+    def export_data(self) -> dict:
+        """Serializa el estado actual a un diccionario."""
+        participants = self.participants.list()
+        part_email_by_id = {p.id: p.email for p in participants}
+        matches = {m.id: m for m in self.matches.list()}
+
+        users_out = []
+        for u in self.users.list():
+            users_out.append(
+                {
+                    "email": u.email,
+                    "nombre": u.nombre,
+                    "hashed_password": u.hashed_password,
+                    "role": u.role.value,
+                    "is_active": u.is_active,
+                    "participant_email": part_email_by_id.get(u.participant_id),
+                }
+            )
+
+        predictions_out = []
+        for pred in self.predictions.list():
+            match = matches.get(pred.match_id)
+            if match is None:
+                continue
+            predictions_out.append(
+                {
+                    "participant_email": part_email_by_id.get(pred.participant_id),
+                    "fifa_id": match.fifa_id,
+                    "local": match.local,
+                    "visitante": match.visitante,
+                    "pred_local": pred.pred_local,
+                    "pred_visitante": pred.pred_visitante,
+                }
+            )
+
+        positions_out = []
+        for pos in self.positions.list_all():
+            positions_out.append(
+                {
+                    "participant_email": part_email_by_id.get(pos.participant_id),
+                    "posicion": pos.posicion,
+                    "equipo": pos.equipo,
+                }
+            )
+
+        return {
+            "version": BACKUP_VERSION,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "users": users_out,
+            "participants": [{"nombre": p.nombre, "email": p.email} for p in participants],
+            "predictions": predictions_out,
+            "position_predictions": positions_out,
+        }
+
+    def write_backup(self, path: str | None = None) -> dict:
+        """Genera el respaldo y lo escribe en disco. Devuelve un resumen."""
+        data = self.export_data()
+        target = resolve_path(path or DEFAULT_BACKUP_PATH)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+        summary = {
+            "ruta": str(target),
+            "usuarios": len(data["users"]),
+            "participantes": len(data["participants"]),
+            "predicciones": len(data["predictions"]),
+            "posiciones": len(data["position_predictions"]),
+            "created_at": data["created_at"],
+        }
+        logger.info("Respaldo creado: %s", summary)
+        return summary
+
+    # ----------------------------------------------------------------- restore
+    def _match_index(self) -> tuple[dict[str, object], dict[frozenset[str], object]]:
+        by_fifa: dict[str, object] = {}
+        by_codes: dict[frozenset[str], object] = {}
+        for m in self.matches.list():
+            if m.fifa_id:
+                by_fifa[m.fifa_id] = m
+            cl, cv = team_code(m.local), team_code(m.visitante)
+            if cl and cv:
+                by_codes[frozenset((cl, cv))] = m
+        return by_fifa, by_codes
+
+    def restore_data(self, data: dict) -> dict:
+        """Restaura usuarios, participantes y predicciones de forma idempotente."""
+        created_users = 0
+        created_participants = 0
+        restored_preds = 0
+        restored_pos = 0
+
+        # 1) Participantes (por email)
+        for item in data.get("participants", []):
+            email = str(item.get("email", "")).strip().lower()
+            if not email:
+                continue
+            existing = self.participants.get_by_email(email)
+            if existing is None:
+                self.participants.create(
+                    nombre=str(item.get("nombre", "")).strip() or email, email=email
+                )
+                created_participants += 1
+        self.db.flush()
+
+        part_by_email = {p.email: p for p in self.participants.list()}
+
+        # 2) Usuarios de acceso (por email); preserva contraseñas existentes
+        for item in data.get("users", []):
+            email = str(item.get("email", "")).strip().lower()
+            hashed = str(item.get("hashed_password", "")).strip()
+            if not email or not hashed:
+                continue
+            part_email = item.get("participant_email")
+            participant = part_by_email.get(str(part_email).lower()) if part_email else None
+            try:
+                role = UserRole(item.get("role", "PARTICIPANT"))
+            except ValueError:
+                role = UserRole.PARTICIPANT
+            existing = self.users.get_by_email(email)
+            if existing is None:
+                self.users.create(
+                    email=email,
+                    nombre=str(item.get("nombre", "")).strip() or email.split("@")[0],
+                    hashed_password=hashed,
+                    role=role,
+                    participant_id=participant.id if participant else None,
+                )
+                created_users += 1
+            elif participant and existing.participant_id is None:
+                existing.participant_id = participant.id
+        self.db.flush()
+
+        # 3) Predicciones de partidos (upsert por participante + partido)
+        by_fifa, by_codes = self._match_index()
+        for item in data.get("predictions", []):
+            participant = part_by_email.get(str(item.get("participant_email", "")).lower())
+            if participant is None:
+                continue
+            match = None
+            fifa_id = item.get("fifa_id")
+            if fifa_id and fifa_id in by_fifa:
+                match = by_fifa[fifa_id]
+            if match is None:
+                cl, cv = team_code(item.get("local")), team_code(item.get("visitante"))
+                if cl and cv:
+                    match = by_codes.get(frozenset((cl, cv)))
+            if match is None:
+                continue
+            self.predictions.upsert(
+                participant_id=participant.id,
+                match_id=match.id,
+                pred_local=int(item.get("pred_local", 0)),
+                pred_visitante=int(item.get("pred_visitante", 0)),
+            )
+            restored_preds += 1
+
+        # 4) Pronósticos de puestos (puntos se recalculan aparte)
+        for item in data.get("position_predictions", []):
+            participant = part_by_email.get(str(item.get("participant_email", "")).lower())
+            if participant is None:
+                continue
+            self.positions.upsert(
+                participant_id=participant.id,
+                posicion=int(item.get("posicion", 0)),
+                equipo=str(item.get("equipo", "")).strip(),
+                puntos=0,
+            )
+            restored_pos += 1
+
+        self.db.commit()
+        summary = {
+            "usuarios_creados": created_users,
+            "participantes_creados": created_participants,
+            "predicciones_restauradas": restored_preds,
+            "posiciones_restauradas": restored_pos,
+        }
+        logger.info("Respaldo restaurado: %s", summary)
+        return summary
+
+    def restore_from_file(self, path: str | None = None) -> dict | None:
+        """Restaura desde el archivo de respaldo si existe."""
+        target = resolve_path(path or DEFAULT_BACKUP_PATH)
+        if not target.exists():
+            return None
+        try:
+            data = json.loads(target.read_text(encoding="utf-8"))
+        except Exception:  # noqa: BLE001
+            logger.exception("No se pudo leer el respaldo: %s", target)
+            return None
+        return self.restore_data(data)

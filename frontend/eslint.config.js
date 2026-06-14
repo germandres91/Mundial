@@ -18,6 +18,7 @@ export default [
         setTimeout: "readonly",
         console: "readonly",
         FormData: "readonly",
+        URL: "readonly",
       },
     },
     plugins: { react, "react-hooks": reactHooks },

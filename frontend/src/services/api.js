@@ -85,6 +85,10 @@ export const endpoints = {
   importRules: () => api.post("/admin/import/rules").then((r) => r.data),
   resetTournament: () => api.post("/admin/reset/tournament").then((r) => r.data),
 
+  createBackup: () => api.post("/admin/backup").then((r) => r.data),
+  downloadBackup: () =>
+    api.get("/admin/backup/download", { responseType: "blob" }).then((r) => r.data),
+
   users: () => api.get("/admin/users").then((r) => r.data),
   createUser: (payload) => api.post("/admin/users", payload).then((r) => r.data),
   deleteUser: (id) => api.delete(`/admin/users/${id}`).then((r) => r.data),

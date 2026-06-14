@@ -1,7 +1,9 @@
 """Endpoints de administración: sync, import Excel, reglas, auditoría, usuarios."""
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, status
+import json
+
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user
@@ -18,6 +20,7 @@ from app.schemas.auth import PasswordReset, UserCreate, UserOut
 from app.schemas.final_position import FinalPositionsUpdate
 from app.schemas.scoring_rule import ScoringRuleOut, ScoringRuleUpdate
 from app.services.auth_service import AuthService
+from app.services.backup_service import BackupService
 from app.services.excel_service import ExcelImportError, ExcelService
 from app.services.ranking_service import RankingService
 from app.services.scoring_service import ScoringService
@@ -254,3 +257,26 @@ def delete_user(
         raise HTTPException(status_code=400, detail="No puedes eliminar tu propia cuenta")
     service.users.delete(user)
     db.commit()
+
+
+@router.post("/backup")
+def create_backup(db: Session = Depends(get_db)) -> dict:
+    """Guarda un respaldo (usuarios, participantes, predicciones y puestos).
+
+    Escribe `data/backup.json` en el servidor y devuelve un resumen. El mismo
+    respaldo puede descargarse con `GET /admin/backup/download` para conservarlo
+    de forma permanente en el repositorio.
+    """
+    return BackupService(db).write_backup()
+
+
+@router.get("/backup/download")
+def download_backup(db: Session = Depends(get_db)) -> Response:
+    """Devuelve el respaldo actual como archivo JSON descargable."""
+    data = BackupService(db).export_data()
+    contenido = json.dumps(data, ensure_ascii=False, indent=2)
+    return Response(
+        content=contenido,
+        media_type="application/json",
+        headers={"Content-Disposition": 'attachment; filename="backup.json"'},
+    )

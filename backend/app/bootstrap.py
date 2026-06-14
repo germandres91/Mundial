@@ -7,6 +7,7 @@ from app.core.logging import get_logger
 from app.repositories.match_repository import MatchRepository
 from app.repositories.participant_repository import ParticipantRepository
 from app.services.auth_service import AuthService
+from app.services.backup_service import BackupService
 from app.services.excel_service import ExcelService
 from app.services.participant_import_service import ParticipantImportService
 from app.services.ranking_service import RankingService
@@ -73,6 +74,13 @@ def bootstrap() -> None:
             ParticipantImportService(db).import_seed_formularios()
         except Exception:  # noqa: BLE001
             logger.exception("No se pudieron importar los formularios semilla")
+
+        # Restaura el respaldo (usuarios + predicciones) si existe. Tiene
+        # prioridad sobre los seeds: así no se pierden cambios hechos en la app.
+        try:
+            BackupService(db).restore_from_file()
+        except Exception:  # noqa: BLE001
+            logger.exception("No se pudo restaurar el respaldo de datos")
 
         # Normaliza el bonus de posiciones según el resultado real vigente.
         # Corrige datos antiguos que pudieran tener puntos preasignados.
