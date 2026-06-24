@@ -127,6 +127,10 @@ class BackupService:
                 by_codes[frozenset((cl, cv))] = m
         return by_fifa, by_codes
 
+    def _participant_map(self) -> dict[str, object]:
+        """Mapa email (minúsculas) -> participante."""
+        return {p.email.lower(): p for p in self.participants.list()}
+
     def restore_data(self, data: dict) -> dict:
         """Restaura usuarios, participantes y predicciones de forma idempotente."""
         created_users = 0
@@ -147,7 +151,7 @@ class BackupService:
                 created_participants += 1
         self.db.flush()
 
-        part_by_email = {p.email: p for p in self.participants.list()}
+        part_by_email = self._participant_map()
 
         # 2) Usuarios de acceso (por email); preserva contraseñas existentes
         for item in data.get("users", []):
@@ -156,7 +160,12 @@ class BackupService:
             if not email or not hashed:
                 continue
             part_email = item.get("participant_email")
-            participant = part_by_email.get(str(part_email).lower()) if part_email else None
+            participant = None
+            if part_email:
+                participant = part_by_email.get(str(part_email).lower())
+            if participant is None:
+                # Enlaza por el mismo correo si no hay participant_email explícito
+                participant = part_by_email.get(email)
             try:
                 role = UserRole(item.get("role", "PARTICIPANT"))
             except ValueError:
@@ -177,9 +186,11 @@ class BackupService:
 
         # 3) Predicciones de partidos (upsert por participante + partido)
         by_fifa, by_codes = self._match_index()
+        skipped_preds = 0
         for item in data.get("predictions", []):
             participant = part_by_email.get(str(item.get("participant_email", "")).lower())
             if participant is None:
+                skipped_preds += 1
                 continue
             match = None
             fifa_id = item.get("fifa_id")
@@ -190,6 +201,7 @@ class BackupService:
                 if cl and cv:
                     match = by_codes.get(frozenset((cl, cv)))
             if match is None:
+                skipped_preds += 1
                 continue
             self.predictions.upsert(
                 participant_id=participant.id,
@@ -198,6 +210,14 @@ class BackupService:
                 pred_visitante=int(item.get("pred_visitante", 0)),
             )
             restored_preds += 1
+
+        if restored_preds == 0 and data.get("predictions"):
+            logger.warning(
+                "Respaldo: 0 predicciones restauradas de %d (¿falta el calendario oficial WC-A-*)",
+                len(data["predictions"]),
+            )
+        elif skipped_preds:
+            logger.info("Respaldo: %d predicciones omitidas (sin partido/participante)", skipped_preds)
 
         # 4) Pronósticos de puestos (puntos se recalculan aparte)
         for item in data.get("position_predictions", []):
@@ -232,4 +252,8 @@ class BackupService:
         except Exception:  # noqa: BLE001
             logger.exception("No se pudo leer el respaldo: %s", target)
             return None
+        # Garantiza los 72 partidos oficiales (WC-A-1, …) antes de enlazar predicciones.
+        from app.services.tournament_service import TournamentService
+
+        TournamentService(self.db).seed_schedule()
         return self.restore_data(data)

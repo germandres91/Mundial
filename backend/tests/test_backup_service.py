@@ -78,6 +78,32 @@ def test_restore_into_fresh_database(db, sample_participants, sample_match):
     assert len(preds) == 1 and preds[0].pred_local == 2
 
 
+def test_restore_with_junk_matches_seeds_official_schedule(db):
+    """Si la BD tiene partidos ajenos, restore_from_file crea el calendario WC y restaura."""
+    from pathlib import Path
+
+    for i in range(72):
+        db.add(
+            Match(
+                fifa_id=f"X-{i}",
+                grupo="Z",
+                fase="X",
+                local=f"L{i}",
+                visitante=f"V{i}",
+                estado=MatchStatus.SCHEDULED,
+            )
+        )
+    db.commit()
+
+    backup_path = Path(__file__).resolve().parents[2] / "data" / "backup.json"
+    if not backup_path.exists():
+        return  # skip si no hay backup en el entorno CI
+
+    summary = BackupService(db).restore_from_file(str(backup_path))
+    assert summary is not None
+    assert summary["predicciones_restauradas"] > 0
+
+
 def test_restore_is_idempotent(db, sample_participants, sample_match):
     PredictionRepository(db).upsert(sample_participants[0].id, sample_match.id, 3, 0)
     db.commit()

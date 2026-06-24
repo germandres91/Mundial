@@ -270,6 +270,20 @@ def create_backup(db: Session = Depends(get_db)) -> dict:
     return BackupService(db).write_backup()
 
 
+@router.post("/backup/restore")
+def restore_backup(db: Session = Depends(get_db)) -> dict:
+    """Reaplica el respaldo desde `data/backup.json` (usuarios + predicciones).
+
+    Útil tras un despliegue si los participantes aparecen sin predicciones:
+    garantiza el calendario oficial y vuelve a cargar todas las predicciones.
+    """
+    result = BackupService(db).restore_from_file()
+    if result is None:
+        raise HTTPException(status_code=404, detail="No se encontró data/backup.json")
+    RankingService(db).recalculate()
+    return result
+
+
 @router.get("/backup/download")
 def download_backup(db: Session = Depends(get_db)) -> Response:
     """Devuelve el respaldo actual como archivo JSON descargable."""

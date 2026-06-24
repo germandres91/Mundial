@@ -209,6 +209,20 @@ function UsersManager() {
   const roleLabel = (r) => (r === "ADMIN" ? "Administrador" : "Solo lectura");
 
   const [saving, setSaving] = useState(false);
+  const restore = useMutationWithRefresh(endpoints.restoreBackup, {
+    onSuccess: (res) =>
+      toast.success(
+        `Restaurado: ${res.predicciones_restauradas} predicciones, ${res.posiciones_restauradas} top4`
+      ),
+    onError: (e) => toast.error(e.response?.data?.detail || "No se pudo restaurar el respaldo"),
+  });
+
+  const handleRestore = () => {
+    if (window.confirm("¿Restaurar usuarios y predicciones desde el respaldo del servidor?")) {
+      restore.mutate();
+    }
+  };
+
   const handleBackup = async () => {
     setSaving(true);
     try {
@@ -236,9 +250,14 @@ function UsersManager() {
     <div className="card">
       <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
         <h2 className="font-semibold">Usuarios con acceso</h2>
-        <button className="btn-primary" disabled={saving} onClick={handleBackup}>
-          {saving ? "Guardando…" : "💾 Guardar usuarios"}
-        </button>
+        <div className="flex flex-wrap gap-2">
+          <button className="btn-primary" disabled={saving} onClick={handleBackup}>
+            {saving ? "Guardando…" : "💾 Guardar usuarios"}
+          </button>
+          <button className="btn-ghost" disabled={restore.isPending} onClick={handleRestore}>
+            {restore.isPending ? "Restaurando…" : "♻️ Restaurar predicciones"}
+          </button>
+        </div>
       </div>
       <p className="mb-3 text-sm text-slate-500">
         Crea cuentas para quienes compartirás el link. Por defecto son de

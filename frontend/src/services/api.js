@@ -87,6 +87,7 @@ export const endpoints = {
   resetTournament: () => api.post("/admin/reset/tournament").then((r) => r.data),
 
   createBackup: () => api.post("/admin/backup").then((r) => r.data),
+  restoreBackup: () => api.post("/admin/backup/restore").then((r) => r.data),
   downloadBackup: () =>
     api.get("/admin/backup/download", { responseType: "blob" }).then((r) => r.data),
 

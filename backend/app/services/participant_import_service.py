@@ -64,6 +64,9 @@ class ParticipantImportService:
             key = (pm.grupo, pm.local, pm.visitante)
             match = existing.get(key)
             if match is None:
+                fifa_guess = f"WC-{pm.grupo}-{i}"
+                match = self.matches.get_by_fifa_id(fifa_guess)
+            if match is None:
                 match = self.matches.create(
                     fifa_id=f"WC-{pm.grupo}-{i}",
                     grupo=pm.grupo,

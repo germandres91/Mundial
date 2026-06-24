@@ -46,12 +46,12 @@ def bootstrap() -> None:
         except Exception:  # noqa: BLE001
             logger.exception("No se pudieron importar las reglas")
 
-        # Crea el calendario del torneo (12 grupos, 72 partidos) si está vacío
+        # Crea el calendario del torneo (12 grupos, 72 partidos) si faltan entradas WC-A-*
         try:
-            if MatchRepository(db).count() == 0:
-                TournamentService(db).seed_schedule()
+            TournamentService(db).seed_schedule()
         except Exception:  # noqa: BLE001
             logger.exception("No se pudo crear el calendario inicial")
+            db.rollback()
 
         # Carga el participante inicial (German) desde su formulario
         try:
@@ -68,12 +68,14 @@ def bootstrap() -> None:
                     )
         except Exception:  # noqa: BLE001
             logger.exception("No se pudo importar el formulario inicial")
+            db.rollback()
 
         # Carga los formularios de los demás participantes (idempotente)
         try:
             ParticipantImportService(db).import_seed_formularios()
         except Exception:  # noqa: BLE001
             logger.exception("No se pudieron importar los formularios semilla")
+            db.rollback()
 
         # Restaura el respaldo (usuarios + predicciones) si existe. Tiene
         # prioridad sobre los seeds: así no se pierden cambios hechos en la app.
@@ -81,6 +83,7 @@ def bootstrap() -> None:
             BackupService(db).restore_from_file()
         except Exception:  # noqa: BLE001
             logger.exception("No se pudo restaurar el respaldo de datos")
+            db.rollback()
 
         # Normaliza el bonus de posiciones según el resultado real vigente.
         # Corrige datos antiguos que pudieran tener puntos preasignados.
