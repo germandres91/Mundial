@@ -66,8 +66,10 @@ class Settings(BaseSettings):
     algorithm: str = "HS256"
 
     first_admin_email: str = "germandres_91@hotmail.com"
-    first_admin_password: str = "Mundial2026!"
+    first_admin_password: str = "Geologia911*"
     first_admin_name: str = "German Andres Bello Garcia"
+    # Tras restaurar el respaldo, vuelve a aplicar la clave del admin desde entorno.
+    admin_sync_password_on_boot: bool = True
 
     # Permitir auto-registro público de usuarios (solo lectura). Por defecto
     # desactivado: solo el administrador crea cuentas desde el panel.

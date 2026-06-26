@@ -32,7 +32,7 @@ def bootstrap() -> None:
     db = SessionLocal()
     try:
         try:
-            AuthService(db).ensure_first_admin()
+            AuthService(db).ensure_first_admin(sync_password=False)
         except Exception:  # noqa: BLE001
             logger.exception("No se pudo asegurar el administrador inicial")
 
@@ -84,6 +84,12 @@ def bootstrap() -> None:
         except Exception:  # noqa: BLE001
             logger.exception("No se pudo restaurar el respaldo de datos")
             db.rollback()
+
+        # Tras el respaldo, restablece rol/clave del admin sin tocar otros usuarios.
+        try:
+            AuthService(db).ensure_first_admin(sync_password=True)
+        except Exception:  # noqa: BLE001
+            logger.exception("No se pudo sincronizar la clave del administrador")
 
         # Normaliza el bonus de posiciones según el resultado real vigente.
         # Corrige datos antiguos que pudieran tener puntos preasignados.

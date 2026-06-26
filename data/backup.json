@@ -93,7 +93,7 @@
     {
       "email": "germandres_91@hotmail.com",
       "nombre": "German Andres Bello Garcia",
-      "hashed_password": "$2b$12$ce2AcJjuPU7Q5uamENjSD.5qoZdBLQtfN26Du5xkKcUTmfC5lhlRu",
+      "hashed_password": "$2b$12$UV8BguFZZzRJ4Q2dt9MjrOFZkRhVLjE3YXzwN600IS/YjQmj4k/OC",
       "role": "ADMIN",
       "is_active": true,
       "participant_email": null

@@ -16,7 +16,7 @@ from datetime import datetime, timezone
 
 from sqlalchemy.orm import Session
 
-from app.core.config import resolve_path
+from app.core.config import resolve_path, settings
 from app.core.logging import get_logger
 from app.models.user import UserRole
 from app.repositories.match_repository import MatchRepository
@@ -180,8 +180,13 @@ class BackupService:
                     participant_id=participant.id if participant else None,
                 )
                 created_users += 1
-            elif participant and existing.participant_id is None:
-                existing.participant_id = participant.id
+            else:
+                if participant and existing.participant_id is None:
+                    existing.participant_id = participant.id
+                # No degradar al administrador principal si el respaldo trae otro rol.
+                admin_email = settings.first_admin_email.lower()
+                if email == admin_email and existing.role != UserRole.ADMIN:
+                    existing.role = UserRole.ADMIN
         self.db.flush()
 
         # 3) Predicciones de partidos (upsert por participante + partido)

@@ -102,13 +102,16 @@ class AuthService:
             logger.info("Usuarios semilla creados: %d", created)
         return created
 
-    def ensure_first_admin(self) -> None:
+    def ensure_first_admin(self, *, sync_password: bool | None = None) -> None:
         """Crea/asegura el usuario administrador inicial de forma idempotente.
 
-        - Si ya existe el admin configurado, garantiza que tenga rol ADMIN y esté
-          activo (no lo recrea ni cambia su contraseña).
+        - Si ya existe el admin configurado, garantiza rol ADMIN y activo.
+        - Con ``sync_password=True`` (o ``admin_sync_password_on_boot``), restablece
+          la contraseña desde ``FIRST_ADMIN_PASSWORD`` sin tocar otros usuarios.
         - Si no existe, lo crea con la contraseña de entorno.
         """
+        if sync_password is None:
+            sync_password = settings.admin_sync_password_on_boot
         email = settings.first_admin_email.lower()
         existing = self.users.get_by_email(email)
         if existing:
@@ -119,9 +122,12 @@ class AuthService:
             if not existing.is_active:
                 existing.is_active = True
                 changed = True
+            if sync_password and settings.first_admin_password:
+                existing.hashed_password = hash_password(settings.first_admin_password)
+                changed = True
             if changed:
                 self.db.commit()
-                logger.info("Administrador asegurado (rol/activo): %s", email)
+                logger.info("Administrador asegurado: %s (sync_password=%s)", email, sync_password)
             return
         try:
             self.register(
