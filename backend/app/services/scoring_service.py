@@ -165,7 +165,11 @@ class ScoringService:
         return acc
 
     def recalculate_all(self) -> int:
-        """Recalcula puntajes de todos los partidos finalizados."""
+        """Recalcula puntajes de todos los partidos finalizados (acumulativo).
+
+        Solo actualiza partidos con marcador oficial; no borra puntajes de otras
+        fases ni de partidos que ya no estén finalizados.
+        """
         total = 0
         for match in self.matches.finished_matches():
             total += self.score_match(match)

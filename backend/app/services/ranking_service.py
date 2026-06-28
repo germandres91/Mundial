@@ -60,12 +60,11 @@ class RankingService:
         return rows
 
     def recalculate(self) -> list[RankingRow]:
-        """Recalcula y persiste el ranking de todos los participantes.
+        """Recalcula y persiste el ranking acumulado de todas las fases.
 
-        Primero recalcula los puntajes de todos los partidos finalizados (para
-        que la 'Carrera al mundial' y el ranking queden al día), luego agrega el
-        total combinando puntos de partidos, bonus de posiciones (1° a 4°) y
-        puntos provisionales en vivo.
+        Suma puntos de grupos, eliminatorias y fases siguientes sin reiniciar:
+        recorre todos los partidos finalizados, actualiza la tabla de puntajes y
+        agrega bonus de posiciones + provisionales en vivo.
         """
         ScoringService(self.db).recalculate_all()
         aggregated = self._aggregate()

@@ -18,11 +18,13 @@ from sqlalchemy.orm import Session
 
 from app.core.config import resolve_path, settings
 from app.core.logging import get_logger
+from app.models.match import MatchStatus
 from app.models.user import UserRole
 from app.repositories.match_repository import MatchRepository
 from app.repositories.participant_repository import ParticipantRepository
 from app.repositories.position_prediction_repository import PositionPredictionRepository
 from app.repositories.prediction_repository import PredictionRepository
+from app.repositories.score_repository import ScoreRepository
 from app.repositories.user_repository import UserRepository
 from app.utils.teams import team_code
 
@@ -42,6 +44,7 @@ class BackupService:
         self.predictions = PredictionRepository(db)
         self.positions = PositionPredictionRepository(db)
         self.matches = MatchRepository(db)
+        self.scores = ScoreRepository(db)
 
     # ------------------------------------------------------------------ export
     def export_data(self) -> dict:
@@ -93,6 +96,41 @@ class BackupService:
                 }
             )
 
+        match_results_out = []
+        for m in self.matches.list():
+            if (
+                m.estado == MatchStatus.FINISHED
+                and m.goles_local is not None
+                and m.goles_visitante is not None
+            ):
+                match_results_out.append(
+                    {
+                        "fifa_id": m.fifa_id,
+                        "local": m.local,
+                        "visitante": m.visitante,
+                        "goles_local": m.goles_local,
+                        "goles_visitante": m.goles_visitante,
+                        "estado": m.estado.value,
+                        "fase": m.fase,
+                    }
+                )
+
+        scores_out = []
+        for score in self.scores.list():
+            match = matches.get(score.match_id)
+            if match is None:
+                continue
+            scores_out.append(
+                {
+                    "participant_email": part_email_by_id.get(score.participant_id),
+                    "fifa_id": match.fifa_id,
+                    "local": match.local,
+                    "visitante": match.visitante,
+                    "puntos": score.puntos,
+                    "detalle": score.detalle,
+                }
+            )
+
         return {
             "version": BACKUP_VERSION,
             "created_at": datetime.now(timezone.utc).isoformat(),
@@ -100,6 +138,8 @@ class BackupService:
             "participants": [{"nombre": p.nombre, "email": p.email} for p in participants],
             "predictions": predictions_out,
             "position_predictions": positions_out,
+            "match_results": match_results_out,
+            "scores": scores_out,
             "predicciones_bloqueadas": locked_count,
         }
 
@@ -115,6 +155,8 @@ class BackupService:
             "participantes": len(data["participants"]),
             "predicciones": len(data["predictions"]),
             "predicciones_bloqueadas": data.get("predicciones_bloqueadas", 0),
+            "resultados_partidos": len(data.get("match_results", [])),
+            "puntajes_guardados": len(data.get("scores", [])),
             "posiciones": len(data["position_predictions"]),
             "created_at": data["created_at"],
         }
@@ -195,8 +237,30 @@ class BackupService:
                     existing.role = UserRole.ADMIN
         self.db.flush()
 
-        # 3) Predicciones de partidos (upsert por participante + partido)
+        # 3) Resultados oficiales de partidos (grupos + eliminatorias)
         by_fifa, by_codes = self._match_index()
+        restored_results = 0
+        for item in data.get("match_results", []):
+            match = None
+            fifa_id = item.get("fifa_id")
+            if fifa_id and fifa_id in by_fifa:
+                match = by_fifa[fifa_id]
+            if match is None:
+                cl, cv = team_code(item.get("local")), team_code(item.get("visitante"))
+                if cl and cv:
+                    match = by_codes.get(frozenset((cl, cv)))
+            if match is None:
+                continue
+            match.goles_local = int(item.get("goles_local", 0))
+            match.goles_visitante = int(item.get("goles_visitante", 0))
+            try:
+                match.estado = MatchStatus(item.get("estado", MatchStatus.FINISHED.value))
+            except ValueError:
+                match.estado = MatchStatus.FINISHED
+            restored_results += 1
+        self.db.flush()
+
+        # 4) Predicciones de partidos (upsert por participante + partido)
         skipped_preds = 0
         for item in data.get("predictions", []):
             participant = part_by_email.get(str(item.get("participant_email", "")).lower())
@@ -238,7 +302,7 @@ class BackupService:
         elif skipped_preds:
             logger.info("Respaldo: %d predicciones omitidas (sin partido/participante)", skipped_preds)
 
-        # 4) Pronósticos de puestos (puntos se recalculan aparte)
+        # 5) Pronósticos de puestos (puntos se recalculan aparte)
         for item in data.get("position_predictions", []):
             participant = part_by_email.get(str(item.get("participant_email", "")).lower())
             if participant is None:
@@ -251,12 +315,42 @@ class BackupService:
             )
             restored_pos += 1
 
+        # 6) Puntajes acumulados por partido (ranking histórico)
+        restored_scores = 0
+        skipped_scores = 0
+        for item in data.get("scores", []):
+            participant = part_by_email.get(str(item.get("participant_email", "")).lower())
+            if participant is None:
+                skipped_scores += 1
+                continue
+            match = None
+            fifa_id = item.get("fifa_id")
+            if fifa_id and fifa_id in by_fifa:
+                match = by_fifa[fifa_id]
+            if match is None:
+                cl, cv = team_code(item.get("local")), team_code(item.get("visitante"))
+                if cl and cv:
+                    match = by_codes.get(frozenset((cl, cv)))
+            if match is None:
+                skipped_scores += 1
+                continue
+            self.scores.upsert(
+                participant_id=participant.id,
+                match_id=match.id,
+                puntos=int(item.get("puntos", 0)),
+                detalle=item.get("detalle"),
+            )
+            restored_scores += 1
+
         self.db.commit()
         summary = {
             "usuarios_creados": created_users,
             "participantes_creados": created_participants,
+            "resultados_restaurados": restored_results,
             "predicciones_restauradas": restored_preds,
             "posiciones_restauradas": restored_pos,
+            "puntajes_restaurados": restored_scores,
+            "puntajes_omitidos": skipped_scores,
         }
         logger.info("Respaldo restaurado: %s", summary)
         return summary
@@ -271,8 +365,21 @@ class BackupService:
         except Exception:  # noqa: BLE001
             logger.exception("No se pudo leer el respaldo: %s", target)
             return None
-        # Garantiza los 72 partidos oficiales (WC-A-1, …) antes de enlazar predicciones.
+        # Garantiza calendario oficial antes de enlazar predicciones/puntajes.
         from app.services.tournament_service import TournamentService
 
         TournamentService(self.db).seed_schedule()
+
+        has_knockout = any(
+            str(p.get("fifa_id") or "").startswith("KO-")
+            for p in data.get("predictions", []) + data.get("scores", [])
+        )
+        if has_knockout:
+            try:
+                from app.services.knockout_service import KnockoutService
+
+                KnockoutService(self.db).sync_r32_schedule()
+            except Exception:  # noqa: BLE001
+                logger.exception("No se pudieron crear partidos de eliminatorias al restaurar")
+
         return self.restore_data(data)

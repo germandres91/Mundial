@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from collections import defaultdict
+from datetime import datetime, timezone
 
 from sqlalchemy.orm import Session
 
@@ -119,6 +120,7 @@ class DashboardService:
             for m in self.matches.list()
             if m.id in scored_match_ids or m.estado == MatchStatus.FINISHED
         ]
+        played.sort(key=lambda m: (m.fecha is None, m.fecha or datetime.min.replace(tzinfo=timezone.utc), m.id))
         partidos = [
             RaceMatch(
                 orden=i,

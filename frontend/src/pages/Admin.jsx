@@ -239,8 +239,11 @@ function UsersManager() {
       URL.revokeObjectURL(url);
       toast.success(
         `Respaldo guardado: ${res.usuarios} usuarios, ${res.predicciones} predicciones` +
-          (res.predicciones_bloqueadas != null
-            ? ` (${res.predicciones_bloqueadas} eliminatorias bloqueadas)`
+          (res.puntajes_guardados != null
+            ? `, ${res.puntajes_guardados} puntajes acumulados`
+            : "") +
+          (res.resultados_partidos != null
+            ? `, ${res.resultados_partidos} resultados`
             : "") +
           `. Se descargó backup.json`
       );

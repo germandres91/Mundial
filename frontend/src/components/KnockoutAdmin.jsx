@@ -122,7 +122,7 @@ export default function KnockoutAdmin() {
       a.remove();
       URL.revokeObjectURL(url);
       toast.success(
-        `Respaldo guardado: ${res.predicciones} predicciones (${res.predicciones_bloqueadas ?? 0} eliminatorias bloqueadas). Descargado backup.json`
+        `Respaldo guardado: ${res.predicciones} predicciones (${res.puntajes_guardados ?? 0} puntajes, ${res.resultados_partidos ?? 0} resultados). Descargado backup.json`
       );
     } catch (e) {
       toast.error(e.response?.data?.detail || "No se pudo guardar el respaldo");
