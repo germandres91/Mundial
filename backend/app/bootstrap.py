@@ -80,7 +80,14 @@ def bootstrap() -> None:
         # Restaura el respaldo (usuarios + predicciones) si existe. Tiene
         # prioridad sobre los seeds: así no se pierden cambios hechos en la app.
         try:
-            BackupService(db).restore_from_file()
+            summary = BackupService(db).restore_from_file()
+            if summary:
+                total = len(ParticipantRepository(db).list())
+                logger.info(
+                    "Respaldo aplicado al arranque: %s participantes en BD (%s nuevos)",
+                    total,
+                    summary.get("participantes_creados", 0),
+                )
         except Exception:  # noqa: BLE001
             logger.exception("No se pudo restaurar el respaldo de datos")
             db.rollback()

@@ -3,11 +3,11 @@ from __future__ import annotations
 
 import json
 
-from fastapi import APIRouter, Depends, HTTPException, Response, status
+from fastapi import APIRouter, Depends, File, HTTPException, Response, UploadFile, status
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user
-from app.core.config import settings
+from app.core.config import resolve_path, settings
 from app.core.database import get_db
 from app.models.match import MatchStatus
 from app.models.user import User
@@ -22,7 +22,7 @@ from app.schemas.final_position import FinalPositionsUpdate
 from app.schemas.round_prediction import LatePredictionReview
 from app.schemas.scoring_rule import ScoringRuleOut, ScoringRuleUpdate
 from app.services.auth_service import AuthService
-from app.services.backup_service import BackupService
+from app.services.backup_service import DEFAULT_BACKUP_PATH, BackupService
 from app.services.excel_service import ExcelImportError, ExcelService
 from app.services.knockout_service import KnockoutService
 from app.services.prediction_submission_service import (
@@ -277,6 +277,14 @@ def create_backup(db: Session = Depends(get_db)) -> dict:
     return BackupService(db).write_backup()
 
 
+def _finalize_backup_restore(db: Session) -> None:
+    """Tras restaurar: enlaza cuentas, sincroniza admin y recalcula ranking."""
+    AuthService(db).link_users_to_participants()
+    AuthService(db).ensure_first_admin(sync_password=True)
+    db.commit()
+    RankingService(db).recalculate()
+
+
 @router.post("/backup/restore")
 def restore_backup(db: Session = Depends(get_db)) -> dict:
     """Reaplica el respaldo desde `data/backup.json` (usuarios + predicciones).
@@ -287,7 +295,37 @@ def restore_backup(db: Session = Depends(get_db)) -> dict:
     result = BackupService(db).restore_from_file()
     if result is None:
         raise HTTPException(status_code=404, detail="No se encontró data/backup.json")
-    RankingService(db).recalculate()
+    _finalize_backup_restore(db)
+    return result
+
+
+@router.post("/backup/upload")
+async def upload_backup(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+) -> dict:
+    """Sube un backup.json, lo guarda en el servidor y lo restaura al instante."""
+    if not file.filename or not file.filename.lower().endswith(".json"):
+        raise HTTPException(status_code=400, detail="El archivo debe ser .json")
+
+    raw = await file.read()
+    try:
+        data = json.loads(raw.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise HTTPException(status_code=400, detail="JSON de respaldo inválido") from exc
+
+    if not isinstance(data.get("participants"), list):
+        raise HTTPException(status_code=400, detail="El respaldo no contiene participantes")
+
+    target = resolve_path(DEFAULT_BACKUP_PATH)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    result = BackupService(db).restore_from_file(str(target))
+    if result is None:
+        raise HTTPException(status_code=500, detail="No se pudo restaurar el respaldo subido")
+    _finalize_backup_restore(db)
+    result["participantes_en_respaldo"] = len(data.get("participants", []))
     return result
 
 

@@ -213,7 +213,9 @@ function UsersManager() {
   const restore = useMutationWithRefresh(endpoints.restoreBackup, {
     onSuccess: (res) =>
       toast.success(
-        `Restaurado: ${res.predicciones_restauradas} predicciones, ${res.posiciones_restauradas} top4`
+        `Restaurado: ${res.participantes_creados ?? 0} participantes nuevos, ` +
+          `${res.usuarios_creados ?? 0} usuarios nuevos, ` +
+          `${res.predicciones_restauradas} predicciones, ${res.posiciones_restauradas} top4`
       ),
     onError: (e) => toast.error(e.response?.data?.detail || "No se pudo restaurar el respaldo"),
   });
@@ -222,6 +224,29 @@ function UsersManager() {
     if (window.confirm("¿Restaurar usuarios y predicciones desde el respaldo del servidor?")) {
       restore.mutate();
     }
+  };
+
+  const uploadBackup = useMutationWithRefresh(endpoints.uploadBackup, {
+    onSuccess: (res) =>
+      toast.success(
+        `Respaldo aplicado: ${res.participantes_en_respaldo ?? "?"} participantes, ` +
+          `${res.participantes_creados ?? 0} nuevos, ${res.predicciones_restauradas} predicciones`
+      ),
+    onError: (e) => toast.error(e.response?.data?.detail || "No se pudo subir el respaldo"),
+  });
+
+  const handleUploadBackup = (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    if (
+      !window.confirm(
+        `¿Subir y restaurar "${file.name}"? Se reemplazará el respaldo del servidor y se cargarán todos los participantes.`
+      )
+    ) {
+      return;
+    }
+    uploadBackup.mutate(file);
   };
 
   const handleBackup = async () => {
@@ -265,6 +290,16 @@ function UsersManager() {
           <button className="btn-ghost" disabled={restore.isPending} onClick={handleRestore}>
             {restore.isPending ? "Restaurando…" : "♻️ Restaurar predicciones"}
           </button>
+          <label className={`btn-ghost cursor-pointer ${uploadBackup.isPending ? "opacity-60" : ""}`}>
+            {uploadBackup.isPending ? "Subiendo…" : "📤 Subir respaldo"}
+            <input
+              type="file"
+              accept=".json,application/json"
+              className="hidden"
+              disabled={uploadBackup.isPending || saving}
+              onChange={handleUploadBackup}
+            />
+          </label>
         </div>
       </div>
       <p className="mb-3 text-sm text-slate-500">

@@ -88,6 +88,11 @@ export const endpoints = {
 
   createBackup: () => api.post("/admin/backup").then((r) => r.data),
   restoreBackup: () => api.post("/admin/backup/restore").then((r) => r.data),
+  uploadBackup: (file) => {
+    const form = new FormData();
+    form.append("file", file);
+    return api.post("/admin/backup/upload", form).then((r) => r.data);
+  },
   downloadBackup: () =>
     api.get("/admin/backup/download", { responseType: "blob" }).then((r) => r.data),
 
