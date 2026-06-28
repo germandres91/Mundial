@@ -1,11 +1,12 @@
 """Esquemas de partidos."""
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field, field_serializer
 
 from app.models.match import MatchStatus
+from app.utils.datetime_fmt import utc_iso
 
 
 class MatchBase(BaseModel):
@@ -47,14 +48,4 @@ class MatchOut(MatchBase):
 
     @field_serializer("fecha")
     def _serialize_fecha(self, value: datetime | None) -> str | None:
-        """Devuelve la fecha siempre en UTC con offset explícito.
-
-        En SQLite las fechas se guardan sin zona; aquí asumimos que son UTC y
-        emitimos ISO-8601 con `+00:00` para que el navegador la convierta bien
-        a la hora local (Colombia) sin desfases.
-        """
-        if value is None:
-            return None
-        if value.tzinfo is None:
-            value = value.replace(tzinfo=timezone.utc)
-        return value.astimezone(timezone.utc).isoformat()
+        return utc_iso(value)

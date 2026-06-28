@@ -1,14 +1,15 @@
 {
   "fase": "Dieciseisavos de final",
-  "notas": "Cruces y horarios tras cerrar la fase de grupos (27-jun-2026). Horarios UTC según zona Este EE.UU. (EDT) en fuentes FIFA / Sporting News / Infobae.",
+  "notas": "Cruces post fase de grupos. fecha_dia_colombia y hora_colombia son la referencia de calendario para usuarios en Colombia. fecha_utc es el pitido inicial en UTC.",
   "partidos": [
     {
       "fifa_id": "KO-R32-1",
       "match_no": 73,
       "local": "Sudáfrica",
       "visitante": "Canadá",
-      "fecha_utc": "2026-06-28T19:00:00+00:00",
+      "fecha_dia_colombia": "2026-06-28",
       "hora_colombia": "14:00",
+      "fecha_utc": "2026-06-28T19:00:00+00:00",
       "sede": "Los Angeles"
     },
     {
@@ -16,8 +17,9 @@
       "match_no": 74,
       "local": "Alemania",
       "visitante": "Paraguay",
-      "fecha_utc": "2026-06-29T20:30:00+00:00",
+      "fecha_dia_colombia": "2026-06-29",
       "hora_colombia": "15:30",
+      "fecha_utc": "2026-06-29T20:30:00+00:00",
       "sede": "Boston"
     },
     {
@@ -25,8 +27,9 @@
       "match_no": 75,
       "local": "Países Bajos",
       "visitante": "Marruecos",
-      "fecha_utc": "2026-06-30T01:00:00+00:00",
+      "fecha_dia_colombia": "2026-06-29",
       "hora_colombia": "20:00",
+      "fecha_utc": "2026-06-30T01:00:00+00:00",
       "sede": "Monterrey"
     },
     {
@@ -34,8 +37,9 @@
       "match_no": 76,
       "local": "Brasil",
       "visitante": "Japón",
-      "fecha_utc": "2026-06-29T17:00:00+00:00",
+      "fecha_dia_colombia": "2026-06-29",
       "hora_colombia": "12:00",
+      "fecha_utc": "2026-06-29T17:00:00+00:00",
       "sede": "Houston"
     },
     {
@@ -43,8 +47,9 @@
       "match_no": 77,
       "local": "Francia",
       "visitante": "Suecia",
-      "fecha_utc": "2026-06-30T21:00:00+00:00",
+      "fecha_dia_colombia": "2026-06-30",
       "hora_colombia": "16:00",
+      "fecha_utc": "2026-06-30T21:00:00+00:00",
       "sede": "New York / New Jersey"
     },
     {
@@ -52,8 +57,9 @@
       "match_no": 78,
       "local": "Costa de Marfil",
       "visitante": "Noruega",
-      "fecha_utc": "2026-06-30T17:00:00+00:00",
+      "fecha_dia_colombia": "2026-06-30",
       "hora_colombia": "12:00",
+      "fecha_utc": "2026-06-30T17:00:00+00:00",
       "sede": "Dallas"
     },
     {
@@ -61,8 +67,9 @@
       "match_no": 79,
       "local": "México",
       "visitante": "Ecuador",
-      "fecha_utc": "2026-07-01T01:00:00+00:00",
+      "fecha_dia_colombia": "2026-06-30",
       "hora_colombia": "20:00",
+      "fecha_utc": "2026-07-01T01:00:00+00:00",
       "sede": "Ciudad de México"
     },
     {
@@ -70,8 +77,9 @@
       "match_no": 80,
       "local": "Inglaterra",
       "visitante": "RD Congo",
-      "fecha_utc": "2026-07-01T16:00:00+00:00",
+      "fecha_dia_colombia": "2026-07-01",
       "hora_colombia": "11:00",
+      "fecha_utc": "2026-07-01T16:00:00+00:00",
       "sede": "Atlanta"
     },
     {
@@ -79,8 +87,9 @@
       "match_no": 81,
       "local": "Estados Unidos",
       "visitante": "Bosnia / Herzegovina",
-      "fecha_utc": "2026-07-02T00:00:00+00:00",
+      "fecha_dia_colombia": "2026-07-01",
       "hora_colombia": "19:00",
+      "fecha_utc": "2026-07-02T00:00:00+00:00",
       "sede": "San Francisco"
     },
     {
@@ -88,8 +97,9 @@
       "match_no": 82,
       "local": "Bélgica",
       "visitante": "Senegal",
-      "fecha_utc": "2026-07-01T20:00:00+00:00",
+      "fecha_dia_colombia": "2026-07-01",
       "hora_colombia": "15:00",
+      "fecha_utc": "2026-07-01T20:00:00+00:00",
       "sede": "Seattle"
     },
     {
@@ -97,8 +107,9 @@
       "match_no": 83,
       "local": "Portugal",
       "visitante": "Croacia",
-      "fecha_utc": "2026-07-02T23:00:00+00:00",
+      "fecha_dia_colombia": "2026-07-02",
       "hora_colombia": "18:00",
+      "fecha_utc": "2026-07-02T23:00:00+00:00",
       "sede": "Toronto"
     },
     {
@@ -106,8 +117,9 @@
       "match_no": 84,
       "local": "España",
       "visitante": "Austria",
-      "fecha_utc": "2026-07-02T19:00:00+00:00",
+      "fecha_dia_colombia": "2026-07-02",
       "hora_colombia": "14:00",
+      "fecha_utc": "2026-07-02T19:00:00+00:00",
       "sede": "Los Angeles"
     },
     {
@@ -115,8 +127,9 @@
       "match_no": 85,
       "local": "Suiza",
       "visitante": "Argelia",
-      "fecha_utc": "2026-07-03T03:00:00+00:00",
+      "fecha_dia_colombia": "2026-07-02",
       "hora_colombia": "22:00",
+      "fecha_utc": "2026-07-03T03:00:00+00:00",
       "sede": "Vancouver"
     },
     {
@@ -124,8 +137,9 @@
       "match_no": 86,
       "local": "Argentina",
       "visitante": "Cabo Verde",
-      "fecha_utc": "2026-07-03T22:00:00+00:00",
+      "fecha_dia_colombia": "2026-07-03",
       "hora_colombia": "17:00",
+      "fecha_utc": "2026-07-03T22:00:00+00:00",
       "sede": "Miami"
     },
     {
@@ -133,8 +147,9 @@
       "match_no": 87,
       "local": "Colombia",
       "visitante": "Ghana",
-      "fecha_utc": "2026-07-04T01:30:00+00:00",
+      "fecha_dia_colombia": "2026-07-03",
       "hora_colombia": "20:30",
+      "fecha_utc": "2026-07-04T01:30:00+00:00",
       "sede": "Kansas City"
     },
     {
@@ -142,8 +157,9 @@
       "match_no": 88,
       "local": "Australia",
       "visitante": "Egipto",
-      "fecha_utc": "2026-07-03T18:00:00+00:00",
+      "fecha_dia_colombia": "2026-07-03",
       "hora_colombia": "13:00",
+      "fecha_utc": "2026-07-03T18:00:00+00:00",
       "sede": "Dallas"
     }
   ],

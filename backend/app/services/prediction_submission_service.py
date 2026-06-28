@@ -15,7 +15,8 @@ from app.repositories.late_prediction_repository import LatePredictionRepository
 from app.repositories.match_repository import MatchRepository
 from app.repositories.participant_repository import ParticipantRepository
 from app.repositories.prediction_repository import PredictionRepository
-from app.services.knockout_service import KNOCKOUT_FASES, r32_grace_submit_days
+from app.services.knockout_service import KNOCKOUT_FASES, r32_display_by_fifa_id, r32_grace_submit_days
+from app.utils.datetime_fmt import utc_iso
 
 logger = get_logger(__name__)
 
@@ -191,9 +192,11 @@ class PredictionSubmissionService:
             for r in self.late.list()
             if r.participant_id == pid and r.status == LatePredictionStatus.PENDING
         }
+        display = r32_display_by_fifa_id()
         out = []
         for m in knockout:
             pred = preds.get(m.id)
+            meta = display.get(m.fifa_id or "", {})
             out.append(
                 {
                     "match_id": m.id,
@@ -201,7 +204,9 @@ class PredictionSubmissionService:
                     "fase": m.fase,
                     "local": m.local,
                     "visitante": m.visitante,
-                    "fecha": m.fecha.isoformat() if m.fecha else None,
+                    "fecha": utc_iso(m.fecha),
+                    "fecha_dia_colombia": meta.get("fecha_dia_colombia"),
+                    "hora_colombia": meta.get("hora_colombia"),
                     "estado": m.estado.value,
                     "can_submit": pred is None or pred.locked_at is None,
                     "submitted": pred is not None and pred.locked_at is not None,
@@ -255,7 +260,8 @@ class PredictionSubmissionService:
                     "fase": m.fase,
                     "local": m.local,
                     "visitante": m.visitante,
-                    "fecha": m.fecha.isoformat() if m.fecha else None,
+                    "fecha": utc_iso(m.fecha),
+                    **r32_display_by_fifa_id().get(m.fifa_id or "", {}),
                     "estado": m.estado.value,
                 }
                 for m in matches

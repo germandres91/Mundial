@@ -1,4 +1,5 @@
 import { flagUrl } from "../utils/flags";
+import { formatColombia } from "../utils/dates";
 
 function Flag({ name }) {
   const url = flagUrl(name);
@@ -18,13 +19,12 @@ function Flag({ name }) {
 
 function formatDate(iso) {
   if (!iso) return "Por definir";
-  return new Date(iso).toLocaleString("es-CO", {
+  return formatColombia(iso, {
     weekday: "short",
     day: "2-digit",
     month: "short",
     hour: "2-digit",
     minute: "2-digit",
-    timeZone: "America/Bogota",
   });
 }
 

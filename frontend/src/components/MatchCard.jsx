@@ -1,17 +1,15 @@
 import StatusBadge from "./StatusBadge";
+import { formatColombia, formatMatchSchedule } from "../utils/dates";
 
 function formatDate(iso) {
   if (!iso) return "Por definir";
-  return (
-    new Date(iso).toLocaleString("es-CO", {
-      weekday: "short",
-      day: "2-digit",
-      month: "short",
-      hour: "2-digit",
-      minute: "2-digit",
-      timeZone: "America/Bogota",
-    }) + " (hora COL)"
-  );
+  return formatColombia(iso, {
+    weekday: "short",
+    day: "2-digit",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  }) + " (hora COL)";
 }
 
 export default function MatchCard({ match, onAction, actionLabel }) {

@@ -204,3 +204,14 @@ def test_round_predictions_api(client, db, sample_participants):
     assert matches.status_code == 200
     row = next(m for m in matches.json() if m["match_id"] == match.id)
     assert row["submitted"] is True
+    assert "+00:00" in row["fecha"] or row["fecha"].endswith("Z")
+
+
+def test_round_matches_colombia_date_netherlands(db, sample_participants):
+    p = sample_participants[0]
+    user = _participant_user(db, p)
+    KnockoutService(db).advance_round_of_32()
+    rows = PredictionSubmissionService(db).open_matches_for(user)
+    ned = next(r for r in rows if r["fifa_id"] == "KO-R32-3")
+    assert ned["fecha_dia_colombia"] == "2026-06-29"
+    assert ned["hora_colombia"] == "20:00"

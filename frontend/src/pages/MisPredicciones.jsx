@@ -4,6 +4,7 @@ import { useToast } from "../context/ToastContext";
 import { useAuth } from "../context/AuthContext";
 import { useMutationWithRefresh, useRoundMatches } from "../hooks/useApi";
 import { endpoints } from "../services/api";
+import { formatColombia, formatMatchSchedule } from "../utils/dates";
 
 function MatchRow({ match, onSubmitted }) {
   const toast = useToast();
@@ -38,15 +39,7 @@ function MatchRow({ match, onSubmitted }) {
     match.can_submit &&
     match.estado === "SCHEDULED";
 
-  const fechaLabel = match.fecha
-    ? new Date(match.fecha).toLocaleString("es-CO", {
-        timeZone: "America/Bogota",
-        day: "2-digit",
-        month: "short",
-        hour: "2-digit",
-        minute: "2-digit",
-      })
-    : "Por confirmar";
+  const fechaLabel = formatMatchSchedule(match);
 
   return (
     <div className="rounded-xl border border-slate-200 p-4 dark:border-slate-700">
@@ -70,8 +63,11 @@ function MatchRow({ match, onSubmitted }) {
           {match.locked_at && (
             <span className="ml-2 text-xs text-slate-500">
               (bloqueada{" "}
-              {new Date(match.locked_at).toLocaleString("es-CO", {
-                timeZone: "America/Bogota",
+              {formatColombia(match.locked_at, {
+                day: "2-digit",
+                month: "short",
+                hour: "2-digit",
+                minute: "2-digit",
               })}
               )
             </span>
