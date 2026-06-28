@@ -27,6 +27,12 @@ export function AuthProvider({ children }) {
     }
   };
 
+  const refreshMe = async () => {
+    const me = await endpoints.me();
+    setUser(me);
+    return me;
+  };
+
   useEffect(() => {
     loadMe();
   }, []);
@@ -49,6 +55,7 @@ export function AuthProvider({ children }) {
     loading,
     login,
     logout,
+    refreshMe,
     isAuthenticated: !!user,
     isAdmin: user?.role === "ADMIN",
   };

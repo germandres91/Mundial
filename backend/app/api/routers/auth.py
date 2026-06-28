@@ -39,6 +39,9 @@ def login_form(
 
 
 @router.get("/me", response_model=UserOut)
-def me(current: User = Depends(get_current_user)) -> User:
+def me(db: Session = Depends(get_db), current: User = Depends(get_current_user)) -> User:
     """Devuelve los datos del usuario autenticado."""
+    if current.participant_id is None:
+        AuthService(db).link_user_to_participant(current)
+        db.refresh(current)
     return current

@@ -238,7 +238,11 @@ function UsersManager() {
       a.remove();
       URL.revokeObjectURL(url);
       toast.success(
-        `Respaldo guardado: ${res.usuarios} usuarios, ${res.predicciones} predicciones. Se descargó backup.json`
+        `Respaldo guardado: ${res.usuarios} usuarios, ${res.predicciones} predicciones` +
+          (res.predicciones_bloqueadas != null
+            ? ` (${res.predicciones_bloqueadas} eliminatorias bloqueadas)`
+            : "") +
+          `. Se descargó backup.json`
       );
     } catch (e) {
       toast.error(e.response?.data?.detail || "No se pudo guardar el respaldo");

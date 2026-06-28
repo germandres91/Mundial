@@ -64,20 +64,24 @@ class BackupService:
             )
 
         predictions_out = []
+        locked_count = 0
         for pred in self.predictions.list():
             match = matches.get(pred.match_id)
             if match is None:
                 continue
-            predictions_out.append(
-                {
-                    "participant_email": part_email_by_id.get(pred.participant_id),
-                    "fifa_id": match.fifa_id,
-                    "local": match.local,
-                    "visitante": match.visitante,
-                    "pred_local": pred.pred_local,
-                    "pred_visitante": pred.pred_visitante,
-                }
-            )
+            if pred.locked_at is not None:
+                locked_count += 1
+            item = {
+                "participant_email": part_email_by_id.get(pred.participant_id),
+                "fifa_id": match.fifa_id,
+                "local": match.local,
+                "visitante": match.visitante,
+                "pred_local": pred.pred_local,
+                "pred_visitante": pred.pred_visitante,
+            }
+            if pred.locked_at is not None:
+                item["locked_at"] = pred.locked_at.isoformat()
+            predictions_out.append(item)
 
         positions_out = []
         for pos in self.positions.list_all():
@@ -96,6 +100,7 @@ class BackupService:
             "participants": [{"nombre": p.nombre, "email": p.email} for p in participants],
             "predictions": predictions_out,
             "position_predictions": positions_out,
+            "predicciones_bloqueadas": locked_count,
         }
 
     def write_backup(self, path: str | None = None) -> dict:
@@ -109,6 +114,7 @@ class BackupService:
             "usuarios": len(data["users"]),
             "participantes": len(data["participants"]),
             "predicciones": len(data["predictions"]),
+            "predicciones_bloqueadas": data.get("predicciones_bloqueadas", 0),
             "posiciones": len(data["position_predictions"]),
             "created_at": data["created_at"],
         }
@@ -208,11 +214,19 @@ class BackupService:
             if match is None:
                 skipped_preds += 1
                 continue
+            locked_at = None
+            locked_raw = item.get("locked_at")
+            if locked_raw:
+                try:
+                    locked_at = datetime.fromisoformat(str(locked_raw))
+                except ValueError:
+                    locked_at = None
             self.predictions.upsert(
                 participant_id=participant.id,
                 match_id=match.id,
                 pred_local=int(item.get("pred_local", 0)),
                 pred_visitante=int(item.get("pred_visitante", 0)),
+                locked_at=locked_at,
             )
             restored_preds += 1
 

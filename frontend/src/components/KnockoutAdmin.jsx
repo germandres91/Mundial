@@ -36,6 +36,7 @@ function CellIcon({ cell }) {
 export default function KnockoutAdmin() {
   const toast = useToast();
   const [faseFilter, setFaseFilter] = useState("");
+  const [savingBackup, setSavingBackup] = useState(false);
   const { data: status, refetch: refetchStatus } = useKnockoutStatus();
   const { data: matrix, refetch: refetchMatrix } = useRoundSubmissions(faseFilter || null);
   const { data: lateList, refetch: refetchLate } = useLatePredictions();
@@ -107,6 +108,29 @@ export default function KnockoutAdmin() {
     }
   );
 
+  const handleSaveBackup = async () => {
+    setSavingBackup(true);
+    try {
+      const res = await endpoints.createBackup();
+      const blob = await endpoints.downloadBackup();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "backup.json";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      toast.success(
+        `Respaldo guardado: ${res.predicciones} predicciones (${res.predicciones_bloqueadas ?? 0} eliminatorias bloqueadas). Descargado backup.json`
+      );
+    } catch (e) {
+      toast.error(e.response?.data?.detail || "No se pudo guardar el respaldo");
+    } finally {
+      setSavingBackup(false);
+    }
+  };
+
   return (
     <div className="card space-y-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -116,9 +140,18 @@ export default function KnockoutAdmin() {
             Genera cruces, revisa quién envió marcadores y aprueba envíos fuera de plazo.
           </p>
         </div>
-        <button className="btn-ghost text-sm" onClick={() => linkUsers.mutate()}>
-          🔗 Vincular cuentas
-        </button>
+        <div className="flex flex-wrap gap-2">
+          <button className="btn-ghost text-sm" onClick={() => linkUsers.mutate()}>
+            🔗 Vincular cuentas
+          </button>
+          <button
+            className="btn-primary text-sm"
+            disabled={savingBackup}
+            onClick={handleSaveBackup}
+          >
+            {savingBackup ? "Guardando…" : "💾 Guardar predicciones"}
+          </button>
+        </div>
       </div>
 
       {status && (

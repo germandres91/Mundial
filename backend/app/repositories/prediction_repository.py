@@ -38,12 +38,19 @@ class PredictionRepository:
         )
 
     def upsert(
-        self, participant_id: int, match_id: int, pred_local: int, pred_visitante: int
+        self,
+        participant_id: int,
+        match_id: int,
+        pred_local: int,
+        pred_visitante: int,
+        locked_at=None,
     ) -> Prediction:
         existing = self.get_for(participant_id, match_id)
         if existing:
             existing.pred_local = pred_local
             existing.pred_visitante = pred_visitante
+            if locked_at is not None:
+                existing.locked_at = locked_at
             self.db.flush()
             return existing
         prediction = Prediction(
@@ -51,6 +58,7 @@ class PredictionRepository:
             match_id=match_id,
             pred_local=pred_local,
             pred_visitante=pred_visitante,
+            locked_at=locked_at,
         )
         self.db.add(prediction)
         self.db.flush()

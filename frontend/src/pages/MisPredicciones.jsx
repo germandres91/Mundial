@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import StatusBadge from "../components/StatusBadge";
 import { useToast } from "../context/ToastContext";
 import { useAuth } from "../context/AuthContext";
@@ -141,8 +141,16 @@ function MatchRow({ match, onSubmitted }) {
 }
 
 export default function MisPredicciones() {
-  const { user } = useAuth();
+  const { user, refreshMe } = useAuth();
   const { data: matches, isLoading, refetch } = useRoundMatches();
+  const [linking, setLinking] = useState(false);
+
+  useEffect(() => {
+    if (user && !user.participant_id) {
+      setLinking(true);
+      refreshMe().finally(() => setLinking(false));
+    }
+  }, [user?.id]);
 
   const byPhase = useMemo(() => {
     const map = {};
@@ -153,6 +161,10 @@ export default function MisPredicciones() {
     });
     return map;
   }, [matches]);
+
+  if (linking) {
+    return <p className="text-sm text-slate-500">Vinculando tu cuenta con tu participante…</p>;
+  }
 
   if (!user?.participant_id) {
     return (

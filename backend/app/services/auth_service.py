@@ -149,16 +149,36 @@ class AuthService:
             else:
                 logger.exception("No se pudo crear el admin inicial (continuando)")
 
-    def link_users_to_participants(self) -> int:
-        """Vincula cuentas de acceso con participantes por email (idempotente)."""
+    def _resolve_participant_for_user(self, user: User):
         from app.repositories.participant_repository import ParticipantRepository
 
         participants = ParticipantRepository(self.db)
+        part = participants.get_by_email(user.email.lower())
+        if part is None:
+            part = participants.find_by_nombre(user.nombre)
+        if part is None and user.email.lower() == settings.first_admin_email.lower():
+            part = participants.find_by_nombre(settings.first_admin_name)
+        return part
+
+    def link_user_to_participant(self, user: User) -> bool:
+        """Vincula un usuario con su participante (email o nombre). Devuelve si hubo cambio."""
+        if user.participant_id is not None:
+            return False
+        part = self._resolve_participant_for_user(user)
+        if part is None:
+            return False
+        user.participant_id = part.id
+        self.db.commit()
+        logger.info("Usuario %s vinculado al participante %s", user.email, part.nombre)
+        return True
+
+    def link_users_to_participants(self) -> int:
+        """Vincula cuentas de acceso con participantes por email o nombre (idempotente)."""
         linked = 0
         for user in self.users.list():
             if user.participant_id is not None:
                 continue
-            part = participants.get_by_email(user.email.lower())
+            part = self._resolve_participant_for_user(user)
             if part is None:
                 continue
             user.participant_id = part.id
