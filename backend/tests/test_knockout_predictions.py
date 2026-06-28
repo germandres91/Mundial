@@ -81,7 +81,7 @@ def test_late_submission_pending_and_admin_approve(db, sample_participants):
         password="secret1",
         role=UserRole.ADMIN,
     )
-    match = _knockout_match(db, kickoff_hours=-1)
+    match = _knockout_match(db, fifa_id="KO-R32-2", kickoff_hours=-1)
     svc = PredictionSubmissionService(db)
 
     result = svc.submit(user, match.id, 0, 2)
@@ -117,26 +117,63 @@ def test_submission_matrix(db, sample_participants):
     assert row2["cells"][0]["submitted"] is False
 
 
-def test_knockout_advance_r32_from_groups(db, monkeypatch):
-    """Genera dieciseisavos cuando hay 32 clasificados simulados."""
-    teams = [{"equipo": f"Team {i}", "grupo": chr(65 + i // 4)} for i in range(32)]
-
-    class FakeTournament:
-        def _standings_from(self, _):
-            return {}
-
-        def _qualified_from(self, _):
-            return teams
-
+def test_knockout_advance_r32_from_official_json(db):
+    """Publica dieciseisavos desde el cuadro oficial JSON."""
     svc = KnockoutService(db)
-    monkeypatch.setattr(svc, "tournament", FakeTournament())
-
     result = svc.advance_round_of_32()
     assert result["created"] == 16
     assert len(svc.matches.list(fase=FASE_R32)) == 16
 
+    first = svc.matches.get_by_fifa_id("KO-R32-1")
+    assert first is not None
+    assert first.local == "Sudáfrica"
+    assert first.visitante == "Canadá"
+
     again = svc.advance_round_of_32()
     assert again["created"] == 0
+
+
+def test_knockout_sync_updates_existing(db):
+    svc = KnockoutService(db)
+    svc.advance_round_of_32()
+    m = svc.matches.get_by_fifa_id("KO-R32-1")
+    m.local = "Equipo X"
+    svc.db.commit()
+
+    result = svc.sync_r32_schedule()
+    assert result["updated"] >= 1
+    m2 = svc.matches.get_by_fifa_id("KO-R32-1")
+    assert m2.local == "Sudáfrica"
+
+
+def test_grace_day_first_match(db, sample_participants, monkeypatch):
+    """KO-R32-1 acepta predicción todo el 28-jun-2026 hora Colombia."""
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+
+    p = sample_participants[0]
+    user = _participant_user(db, p)
+    svc = PredictionSubmissionService(db)
+    ko = KnockoutService(db)
+    ko.advance_round_of_32()
+    match = ko.matches.get_by_fifa_id("KO-R32-1")
+
+    # Simula que ya pasó la hora del partido pero sigue siendo 28-jun en Colombia
+    fixed = datetime(2026, 6, 28, 20, 0, tzinfo=ZoneInfo("America/Bogota"))
+
+    class FixedDatetime(datetime):
+        @classmethod
+        def now(cls, tz=None):
+            if tz == ZoneInfo("America/Bogota"):
+                return fixed
+            return datetime(2026, 6, 29, 1, 0, tzinfo=timezone.utc)
+
+    import app.services.prediction_submission_service as pss
+
+    monkeypatch.setattr(pss, "datetime", FixedDatetime)
+
+    result = svc.submit(user, match.id, 1, 0)
+    assert result["status"] == "submitted"
 
 
 def test_round_predictions_api(client, db, sample_participants):

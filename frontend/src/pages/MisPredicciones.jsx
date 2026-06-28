@@ -88,6 +88,12 @@ function MatchRow({ match, onSubmitted }) {
               Plazo cerrado: tu envío quedará pendiente de aprobación del administrador.
             </p>
           )}
+          {match.fifa_id === "KO-R32-1" && match.kickoff_open && (
+            <p className="text-xs text-emerald-600 dark:text-emerald-400">
+              Excepción de hoy: puedes enviar tu predicción para Sudáfrica vs Canadá hasta
+              medianoche (hora Colombia).
+            </p>
+          )}
           <div className="flex flex-wrap items-end gap-3">
           <div>
             <label className="mb-1 block text-xs text-slate-500">{match.local}</label>

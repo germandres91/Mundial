@@ -48,14 +48,24 @@ export default function KnockoutAdmin() {
 
   const advanceR32 = useMutationWithRefresh(endpoints.knockoutAdvanceR32, {
     onSuccess: (d) => {
+      const msg =
+        d.created || d.updated
+          ? `Dieciseisavos: ${d.created ?? 0} creados, ${d.updated ?? 0} actualizados`
+          : d.message || "Dieciseisavos al día";
+      toast.success(msg);
+      refreshAll();
+    },
+    onError: (e) => toast.error(e.response?.data?.detail || "No se pudo publicar"),
+  });
+
+  const syncR32 = useMutationWithRefresh(endpoints.knockoutSyncR32, {
+    onSuccess: (d) => {
       toast.success(
-        d.created
-          ? `Dieciseisavos creados: ${d.created} partidos`
-          : d.message || "Dieciseisavos ya existían"
+        `Calendario oficial: ${d.created ?? 0} creados, ${d.updated ?? 0} actualizados`
       );
       refreshAll();
     },
-    onError: (e) => toast.error(e.response?.data?.detail || "No se pudo avanzar"),
+    onError: (e) => toast.error(e.response?.data?.detail || "No se pudo sincronizar"),
   });
 
   const advanceNext = useMutationWithRefresh(endpoints.knockoutAdvanceNext, {
@@ -143,14 +153,21 @@ export default function KnockoutAdmin() {
           onClick={() => {
             if (
               window.confirm(
-                "¿Generar los 16 partidos de dieciseisavos con los clasificados reales?"
+                "¿Publicar los 16 dieciseisavos con cruces y horarios oficiales del Mundial?"
               )
             ) {
               advanceR32.mutate();
             }
           }}
         >
-          {advanceR32.isPending ? "Generando…" : "⚽ Generar dieciseisavos"}
+          {advanceR32.isPending ? "Publicando…" : "⚽ Publicar dieciseisavos"}
+        </button>
+        <button
+          className="btn-ghost text-sm"
+          disabled={syncR32.isPending}
+          onClick={() => syncR32.mutate()}
+        >
+          {syncR32.isPending ? "Sincronizando…" : "🔄 Actualizar calendario oficial"}
         </button>
         {FASES.slice(0, -1).map((f) => (
           <button

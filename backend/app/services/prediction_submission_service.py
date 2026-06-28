@@ -1,7 +1,8 @@
 """Envío de predicciones por ronda: una vez, antes del partido, con aprobación tardía."""
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
+from zoneinfo import ZoneInfo
 
 from sqlalchemy.orm import Session
 
@@ -14,7 +15,7 @@ from app.repositories.late_prediction_repository import LatePredictionRepository
 from app.repositories.match_repository import MatchRepository
 from app.repositories.participant_repository import ParticipantRepository
 from app.repositories.prediction_repository import PredictionRepository
-from app.services.knockout_service import KNOCKOUT_FASES
+from app.services.knockout_service import KNOCKOUT_FASES, r32_grace_submit_days
 
 logger = get_logger(__name__)
 
@@ -61,6 +62,16 @@ class PredictionSubmissionService:
     def _kickoff_open(self, match) -> bool:
         if match.estado != MatchStatus.SCHEDULED:
             return False
+
+        # Excepción: partidos con día de gracia (p. ej. primer partido muy cerca del cierre).
+        if match.fifa_id:
+            grace_days = r32_grace_submit_days()
+            grace = grace_days.get(match.fifa_id)
+            if grace is not None:
+                now_col = datetime.now(ZoneInfo("America/Bogota")).date()
+                if now_col == grace:
+                    return True
+
         if match.fecha is None:
             return True
         cutoff = _as_utc(match.fecha)

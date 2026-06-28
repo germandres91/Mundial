@@ -310,9 +310,18 @@ def knockout_status(db: Session = Depends(get_db)) -> dict:
 
 @router.post("/knockout/advance-r32")
 def knockout_advance_r32(db: Session = Depends(get_db)) -> dict:
-    """Genera los 16 partidos de dieciseisavos con los clasificados reales."""
+    """Publica o actualiza los 16 partidos de dieciseisavos (cuadro oficial)."""
     try:
         return KnockoutService(db).advance_round_of_32()
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.post("/knockout/sync-r32")
+def knockout_sync_r32(db: Session = Depends(get_db)) -> dict:
+    """Sincroniza cruces y horarios oficiales de dieciseisavos."""
+    try:
+        return KnockoutService(db).sync_r32_schedule()
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
