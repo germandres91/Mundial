@@ -16,7 +16,9 @@ const FASES = [
   "Final",
 ];
 
-function CellIcon({ cell }) {
+function MatrixCell({ cell, onApprove, onReject, busy }) {
+  const [open, setOpen] = useState(false);
+
   if (cell.submitted) {
     return (
       <span
@@ -27,9 +29,51 @@ function CellIcon({ cell }) {
       </span>
     );
   }
+
   if (cell.pending) {
-    return <span className="text-amber-500" title="Pendiente de aprobación">⏳</span>;
+    const score = `${cell.pending_pred_local ?? "?"}-${cell.pending_pred_visitante ?? "?"}`;
+    return (
+      <div className="relative inline-block">
+        <button
+          type="button"
+          className="rounded px-1 py-0.5 text-amber-600 hover:bg-amber-100 dark:hover:bg-amber-950/40"
+          title={`Pendiente ${score}. Clic para aprobar o rechazar.`}
+          disabled={busy}
+          onClick={() => setOpen((v) => !v)}
+        >
+          ⏳
+          <span className="ml-0.5 font-mono text-[10px]">{score}</span>
+        </button>
+        {open && (
+          <div className="absolute left-1/2 top-full z-20 mt-1 flex -translate-x-1/2 gap-1 rounded-lg border border-slate-200 bg-white p-1 shadow-lg dark:border-slate-700 dark:bg-slate-900">
+            <button
+              type="button"
+              className="rounded bg-emerald-600 px-2 py-1 text-[10px] font-semibold text-white hover:bg-emerald-700"
+              disabled={busy}
+              onClick={() => {
+                onApprove(cell.request_id, score);
+                setOpen(false);
+              }}
+            >
+              ✓ Aprobar
+            </button>
+            <button
+              type="button"
+              className="rounded bg-rose-100 px-2 py-1 text-[10px] font-semibold text-rose-700 hover:bg-rose-200 dark:bg-rose-950/50 dark:text-rose-300"
+              disabled={busy}
+              onClick={() => {
+                onReject(cell.request_id);
+                setOpen(false);
+              }}
+            >
+              ✗
+            </button>
+          </div>
+        )}
+      </div>
+    );
   }
+
   return <span className="text-slate-300">—</span>;
 }
 
@@ -107,6 +151,22 @@ export default function KnockoutAdmin() {
       onError: (e) => toast.error(e.response?.data?.detail || "No se pudo rechazar"),
     }
   );
+
+  const handleApproveFromMatrix = (requestId, score) => {
+    if (!requestId) return;
+    if (window.confirm(`¿Aprobar predicción ${score}?`)) {
+      approve.mutate(requestId);
+    }
+  };
+
+  const handleRejectFromMatrix = (requestId) => {
+    if (!requestId) return;
+    if (window.confirm("¿Rechazar esta solicitud?")) {
+      reject.mutate(requestId);
+    }
+  };
+
+  const matrixBusy = approve.isPending || reject.isPending;
 
   const handleSaveBackup = async () => {
     setSavingBackup(true);
@@ -308,7 +368,12 @@ export default function KnockoutAdmin() {
                     </td>
                     {p.cells.map((cell, idx) => (
                       <td key={idx} className="px-1 py-1.5 text-center">
-                        <CellIcon cell={cell} />
+                        <MatrixCell
+                          cell={cell}
+                          busy={matrixBusy}
+                          onApprove={handleApproveFromMatrix}
+                          onReject={handleRejectFromMatrix}
+                        />
                       </td>
                     ))}
                   </tr>
@@ -318,7 +383,7 @@ export default function KnockoutAdmin() {
           </div>
         )}
         <p className="mt-2 text-xs text-slate-500">
-          ✓ enviado · ⏳ pendiente de aprobación · — sin enviar
+          ✓ enviado · ⏳ pendiente (clic para aprobar/rechazar) · — sin enviar
         </p>
       </div>
     </div>

@@ -33,11 +33,9 @@ function MatchRow({ match, onSubmitted }) {
   );
 
   const isLate = !match.kickoff_open && match.estado === "SCHEDULED";
+  const needsApproval = match.requires_approval || isLate;
   const canEdit =
-    !match.submitted &&
-    !match.pending_approval &&
-    match.can_submit &&
-    match.estado === "SCHEDULED";
+    !match.submitted && !match.pending_approval && match.can_submit;
 
   const fechaLabel = formatMatchSchedule(match);
 
@@ -79,12 +77,14 @@ function MatchRow({ match, onSubmitted }) {
         </div>
       ) : canEdit ? (
         <div className="space-y-2">
-          {isLate && (
+          {needsApproval && (
             <p className="text-xs text-amber-600 dark:text-amber-400">
-              Plazo cerrado: tu envío quedará pendiente de aprobación del administrador.
+              {match.late_submit_allowed && match.estado !== "SCHEDULED"
+                ? "El partido ya empezó: tu envío quedará pendiente de aprobación del administrador."
+                : "Plazo cerrado: tu envío quedará pendiente de aprobación del administrador."}
             </p>
           )}
-          {match.fifa_id === "KO-R32-1" && match.kickoff_open && (
+          {match.fifa_id === "KO-R32-1" && match.kickoff_open && match.estado === "SCHEDULED" && (
             <p className="text-xs text-emerald-600 dark:text-emerald-400">
               Excepción de hoy: puedes enviar tu predicción para Sudáfrica vs Canadá hasta
               medianoche (hora Colombia).
@@ -131,9 +131,7 @@ function MatchRow({ match, onSubmitted }) {
         </div>
       ) : (
         <p className="text-sm text-slate-500">
-          {match.estado !== "SCHEDULED"
-            ? "El partido ya se jugó; no se aceptan predicciones."
-            : "Plazo cerrado. Contacta al administrador si necesitas enviar tarde."}
+          El partido ya se jugó; no se aceptan predicciones.
         </p>
       )}
     </div>
@@ -184,7 +182,8 @@ export default function MisPredicciones() {
         <h1 className="text-2xl font-extrabold">Mis predicciones</h1>
         <p className="text-sm text-slate-500">
           Eliminatorias del Mundial 2026. Cada marcador se envía{" "}
-          <strong>una sola vez</strong> y solo antes de que empiece el partido.
+          <strong>una sola vez</strong>. Si el partido ya empezó, el administrador debe
+          aprobar tu envío.
         </p>
       </div>
 

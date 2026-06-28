@@ -72,6 +72,51 @@ def test_submit_twice_raises_locked(db, sample_participants):
         assert exc.code == "locked"
 
 
+def test_late_submit_allowed_while_match_live(db, sample_participants):
+    """KO-R32-1 acepta envío tardío aunque el partido ya esté en juego."""
+    p = sample_participants[0]
+    user = _participant_user(db, p)
+    svc = PredictionSubmissionService(db)
+    KnockoutService(db).advance_round_of_32()
+    match = svc.matches.get_by_fifa_id("KO-R32-1")
+    match.estado = MatchStatus.LIVE
+    match.goles_local = 0
+    match.goles_visitante = 1
+    db.commit()
+
+    rows = svc.open_matches_for(user)
+    row = next(r for r in rows if r["fifa_id"] == "KO-R32-1")
+    assert row["can_submit"] is True
+    assert row["requires_approval"] is True
+
+    result = svc.submit(user, match.id, 2, 2)
+    assert result["status"] == "pending_approval"
+
+    matrix = svc.submission_matrix(fase=FASE_R32)
+    participant_row = next(
+        r for r in matrix["participants"] if r["participant_id"] == p.id
+    )
+    cell = next(c for c in participant_row["cells"] if c["match_id"] == match.id)
+    assert cell["pending"] is True
+    assert cell["request_id"] is not None
+    assert cell["pending_pred_local"] == 2
+
+
+def test_finished_match_without_late_allowed_is_closed(db, sample_participants):
+    p = sample_participants[0]
+    user = _participant_user(db, p)
+    match = _knockout_match(db, fifa_id="KO-R32-2", kickoff_hours=-2)
+    match.estado = MatchStatus.FINISHED
+    db.commit()
+    svc = PredictionSubmissionService(db)
+
+    try:
+        svc.submit(user, match.id, 1, 0)
+        assert False, "debía fallar"
+    except PredictionSubmissionError as exc:
+        assert exc.code == "closed"
+
+
 def test_late_submission_pending_and_admin_approve(db, sample_participants):
     p = sample_participants[0]
     user = _participant_user(db, p)

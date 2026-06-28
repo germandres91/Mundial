@@ -15,7 +15,12 @@ from app.repositories.late_prediction_repository import LatePredictionRepository
 from app.repositories.match_repository import MatchRepository
 from app.repositories.participant_repository import ParticipantRepository
 from app.repositories.prediction_repository import PredictionRepository
-from app.services.knockout_service import KNOCKOUT_FASES, r32_display_by_fifa_id, r32_grace_submit_days
+from app.services.knockout_service import (
+    KNOCKOUT_FASES,
+    r32_display_by_fifa_id,
+    r32_grace_submit_days,
+    r32_late_submit_allowed,
+)
 from app.utils.datetime_fmt import utc_iso
 
 logger = get_logger(__name__)
@@ -60,18 +65,27 @@ class PredictionSubmissionService:
             return False
         return fase in KNOCKOUT_FASES
 
+    def _in_grace_day(self, match) -> bool:
+        if not match.fifa_id:
+            return False
+        grace = r32_grace_submit_days().get(match.fifa_id)
+        if grace is None:
+            return False
+        now_col = datetime.now(ZoneInfo("America/Bogota")).date()
+        return now_col == grace
+
+    def _late_submit_allowed(self, match) -> bool:
+        if not match.fifa_id:
+            return False
+        return match.fifa_id in r32_late_submit_allowed()
+
     def _kickoff_open(self, match) -> bool:
+        """Envío inmediato (sin aprobación del admin)."""
         if match.estado != MatchStatus.SCHEDULED:
             return False
 
-        # Excepción: partidos con día de gracia (p. ej. primer partido muy cerca del cierre).
-        if match.fifa_id:
-            grace_days = r32_grace_submit_days()
-            grace = grace_days.get(match.fifa_id)
-            if grace is not None:
-                now_col = datetime.now(ZoneInfo("America/Bogota")).date()
-                if now_col == grace:
-                    return True
+        if self._in_grace_day(match):
+            return True
 
         if match.fecha is None:
             return True
@@ -81,6 +95,20 @@ class PredictionSubmissionService:
 
             cutoff = cutoff - timedelta(minutes=settings.prediction_cutoff_minutes)
         return datetime.now(timezone.utc) < cutoff
+
+    def _requires_approval(self, match) -> bool:
+        return not self._kickoff_open(match)
+
+    def _can_submit(self, match, pred, pending_req) -> bool:
+        if pred is not None and pred.locked_at is not None:
+            return False
+        if pending_req is not None:
+            return False
+        if self._late_submit_allowed(match):
+            return True
+        if match.estado != MatchStatus.SCHEDULED:
+            return False
+        return True
 
     def submit(
         self,
@@ -112,6 +140,14 @@ class PredictionSubmissionService:
             raise PredictionSubmissionError(
                 "Tienes una solicitud pendiente de aprobación para este partido",
                 "pending",
+            )
+
+        if match.estado in (MatchStatus.LIVE, MatchStatus.FINISHED) and not self._late_submit_allowed(
+            match
+        ):
+            raise PredictionSubmissionError(
+                "El partido ya se jugó; no se aceptan predicciones.",
+                "closed",
             )
 
         if self._kickoff_open(match):
@@ -196,6 +232,7 @@ class PredictionSubmissionService:
         out = []
         for m in knockout:
             pred = preds.get(m.id)
+            pend = pending.get(m.id)
             meta = display.get(m.fifa_id or "", {})
             out.append(
                 {
@@ -208,12 +245,14 @@ class PredictionSubmissionService:
                     "fecha_dia_colombia": meta.get("fecha_dia_colombia"),
                     "hora_colombia": meta.get("hora_colombia"),
                     "estado": m.estado.value,
-                    "can_submit": pred is None or pred.locked_at is None,
+                    "can_submit": self._can_submit(m, pred, pend),
+                    "requires_approval": self._requires_approval(m),
+                    "late_submit_allowed": self._late_submit_allowed(m),
                     "submitted": pred is not None and pred.locked_at is not None,
                     "pred_local": pred.pred_local if pred else None,
                     "pred_visitante": pred.pred_visitante if pred else None,
                     "locked_at": pred.locked_at.isoformat() if pred and pred.locked_at else None,
-                    "pending_approval": m.id in pending,
+                    "pending_approval": pend is not None,
                     "kickoff_open": self._kickoff_open(m),
                 }
             )
@@ -246,8 +285,11 @@ class PredictionSubmissionService:
                         "match_id": m.id,
                         "submitted": pred is not None and pred.locked_at is not None,
                         "pending": pend is not None,
+                        "request_id": pend.id if pend else None,
                         "pred_local": pred.pred_local if pred else None,
                         "pred_visitante": pred.pred_visitante if pred else None,
+                        "pending_pred_local": pend.pred_local if pend else None,
+                        "pending_pred_visitante": pend.pred_visitante if pend else None,
                     }
                 )
             rows.append({"participant_id": p.id, "nombre": p.nombre, "cells": cells})

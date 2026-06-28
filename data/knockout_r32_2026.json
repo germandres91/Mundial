@@ -165,5 +165,8 @@
   ],
   "grace_submit_day": {
     "KO-R32-1": "2026-06-28"
-  }
+  },
+  "late_submit_allowed": [
+    "KO-R32-1"
+  ]
 }

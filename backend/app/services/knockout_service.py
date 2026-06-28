@@ -426,6 +426,15 @@ class KnockoutService:
 
 
 
+def r32_late_submit_allowed() -> set[str]:
+    """Partidos que aceptan envío tardío (pendiente de aprobación) aunque ya empezaron."""
+    try:
+        raw = load_r32_fixtures().get("late_submit_allowed", [])
+    except ValueError:
+        return set()
+    return {str(x) for x in raw}
+
+
 def r32_grace_submit_days() -> dict[str, date]:
 
     """Partidos que aceptan predicción todo el día indicado (zona Colombia)."""
