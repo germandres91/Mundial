@@ -71,6 +71,9 @@ class Settings(BaseSettings):
     # Tras restaurar el respaldo, vuelve a aplicar la clave del admin desde entorno.
     admin_sync_password_on_boot: bool = True
 
+    # Predicciones de eliminatorias: minutos antes del pitido final para cerrar envíos.
+    prediction_cutoff_minutes: int = 0
+
     # Permitir auto-registro público de usuarios (solo lectura). Por defecto
     # desactivado: solo el administrador crea cuentas desde el panel.
     allow_public_registration: bool = False

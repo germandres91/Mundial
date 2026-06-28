@@ -91,6 +91,11 @@ def bootstrap() -> None:
         except Exception:  # noqa: BLE001
             logger.exception("No se pudo sincronizar la clave del administrador")
 
+        try:
+            AuthService(db).link_users_to_participants()
+        except Exception:  # noqa: BLE001
+            logger.exception("No se pudieron vincular usuarios con participantes")
+
         # Normaliza el bonus de posiciones según el resultado real vigente.
         # Corrige datos antiguos que pudieran tener puntos preasignados.
         try:

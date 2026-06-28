@@ -24,6 +24,9 @@ class Prediction(Base):
     )
     pred_local: Mapped[int] = mapped_column(Integer, nullable=False)
     pred_visitante: Mapped[int] = mapped_column(Integer, nullable=False)
+    locked_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )

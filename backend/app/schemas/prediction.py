@@ -28,6 +28,7 @@ class PredictionOut(PredictionBase):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
+    locked_at: datetime | None = None
     created_at: datetime
 
 

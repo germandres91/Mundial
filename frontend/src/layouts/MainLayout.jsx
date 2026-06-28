@@ -7,6 +7,7 @@ const NAV = [
   { to: "/", label: "Inicio Mundial", icon: "🏟️", end: true },
   { to: "/partidos", label: "Partidos", icon: "⚽" },
   { to: "/predicciones", label: "Predicciones", icon: "🎯" },
+  { to: "/mis-predicciones", label: "Mis predicciones", icon: "✍️" },
   { to: "/ranking", label: "Ranking", icon: "🏆" },
   { to: "/estadisticas", label: "Estadísticas", icon: "📊" },
   { to: "/participante", label: "Participantes", icon: "👤" },

@@ -99,6 +99,29 @@ export const useFinalPositions = () =>
 export const useUsers = () =>
   useQuery({ queryKey: ["users"], queryFn: endpoints.users });
 
+export const useRoundMatches = () =>
+  useQuery({
+    queryKey: ["roundMatches"],
+    queryFn: endpoints.roundMatches,
+    refetchInterval: AUTO_REFRESH,
+  });
+
+export const useKnockoutStatus = () =>
+  useQuery({ queryKey: ["knockoutStatus"], queryFn: endpoints.knockoutStatus });
+
+export const useRoundSubmissions = (fase) =>
+  useQuery({
+    queryKey: ["roundSubmissions", fase],
+    queryFn: () => endpoints.roundSubmissions(fase),
+  });
+
+export const useLatePredictions = () =>
+  useQuery({
+    queryKey: ["latePredictions"],
+    queryFn: endpoints.latePredictions,
+    refetchInterval: AUTO_REFRESH,
+  });
+
 export function useInvalidateAll() {
   const qc = useQueryClient();
   return () =>

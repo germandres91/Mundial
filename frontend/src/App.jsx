@@ -9,6 +9,7 @@ import Stats from "./pages/Stats";
 import Participant from "./pages/Participant";
 import Admin from "./pages/Admin";
 import Login from "./pages/Login";
+import MisPredicciones from "./pages/MisPredicciones";
 import NotFound from "./pages/NotFound";
 
 function Splash() {
@@ -65,6 +66,7 @@ export default function App() {
         <Route index element={<Home />} />
         <Route path="partidos" element={<Matches />} />
         <Route path="predicciones" element={<Predictions />} />
+        <Route path="mis-predicciones" element={<MisPredicciones />} />
         <Route path="ranking" element={<Ranking />} />
         <Route path="estadisticas" element={<Stats />} />
         <Route path="participante" element={<Participant />} />

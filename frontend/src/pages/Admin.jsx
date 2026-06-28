@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import DataTable from "../components/DataTable";
+import KnockoutAdmin from "../components/KnockoutAdmin";
 import Modal from "../components/Modal";
 import StatusBadge from "../components/StatusBadge";
 import { useToast } from "../context/ToastContext";
@@ -498,6 +499,8 @@ export default function Admin() {
       </div>
 
       <UsersManager />
+
+      <KnockoutAdmin />
 
       <SyncStatus />
 

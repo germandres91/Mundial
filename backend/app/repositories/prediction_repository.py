@@ -56,6 +56,29 @@ class PredictionRepository:
         self.db.flush()
         return prediction
 
+    def create_locked(
+        self,
+        participant_id: int,
+        match_id: int,
+        pred_local: int,
+        pred_visitante: int,
+        locked_at,
+    ) -> Prediction:
+        """Crea una predicción definitiva (una sola vez)."""
+        existing = self.get_for(participant_id, match_id)
+        if existing is not None:
+            raise ValueError("Ya existe una predicción para este partido")
+        prediction = Prediction(
+            participant_id=participant_id,
+            match_id=match_id,
+            pred_local=pred_local,
+            pred_visitante=pred_visitante,
+            locked_at=locked_at,
+        )
+        self.db.add(prediction)
+        self.db.flush()
+        return prediction
+
     def count(self) -> int:
         return int(self.db.scalar(select(func.count()).select_from(Prediction)) or 0)
 

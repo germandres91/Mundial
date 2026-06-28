@@ -14,14 +14,21 @@ from app.models.user import User
 from app.providers import get_provider
 from app.repositories.audit_repository import AuditRepository
 from app.repositories.final_position_repository import FinalPositionRepository
+from app.repositories.late_prediction_repository import LatePredictionRepository
 from app.repositories.match_repository import MatchRepository
 from app.repositories.scoring_rule_repository import ScoringRuleRepository
 from app.schemas.auth import PasswordReset, UserCreate, UserOut
 from app.schemas.final_position import FinalPositionsUpdate
+from app.schemas.round_prediction import LatePredictionReview
 from app.schemas.scoring_rule import ScoringRuleOut, ScoringRuleUpdate
 from app.services.auth_service import AuthService
 from app.services.backup_service import BackupService
 from app.services.excel_service import ExcelImportError, ExcelService
+from app.services.knockout_service import KnockoutService
+from app.services.prediction_submission_service import (
+    PredictionSubmissionError,
+    PredictionSubmissionService,
+)
 from app.services.ranking_service import RankingService
 from app.services.scoring_service import ScoringService
 from app.services.sync_service import SyncService
@@ -294,3 +301,91 @@ def download_backup(db: Session = Depends(get_db)) -> Response:
         media_type="application/json",
         headers={"Content-Disposition": 'attachment; filename="backup.json"'},
     )
+
+
+@router.get("/knockout/status")
+def knockout_status(db: Session = Depends(get_db)) -> dict:
+    return KnockoutService(db).status()
+
+
+@router.post("/knockout/advance-r32")
+def knockout_advance_r32(db: Session = Depends(get_db)) -> dict:
+    """Genera los 16 partidos de dieciseisavos con los clasificados reales."""
+    try:
+        return KnockoutService(db).advance_round_of_32()
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.post("/knockout/advance-next")
+def knockout_advance_next(from_fase: str, db: Session = Depends(get_db)) -> dict:
+    """Avanza a la siguiente ronda cuando la fase indicada terminó."""
+    try:
+        return KnockoutService(db).advance_next_round(from_fase)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.get("/round/submissions")
+def round_submissions(fase: str | None = None, db: Session = Depends(get_db)) -> dict:
+    """Matriz de quién envió predicciones por partido de eliminatorias."""
+    return PredictionSubmissionService(db).submission_matrix(fase)
+
+
+@router.get("/late-predictions")
+def list_late_predictions(db: Session = Depends(get_db)) -> list:
+    from app.models.late_prediction_request import LatePredictionStatus
+
+    repo = LatePredictionRepository(db)
+    pending = repo.list(status=LatePredictionStatus.PENDING)
+    out = []
+    for r in pending:
+        out.append(
+            {
+                "id": r.id,
+                "participant_id": r.participant_id,
+                "participant_nombre": r.participant.nombre if r.participant else "?",
+                "match_id": r.match_id,
+                "partido": (
+                    f"{r.match.local} vs {r.match.visitante}" if r.match else "?"
+                ),
+                "fase": r.match.fase if r.match else None,
+                "pred_local": r.pred_local,
+                "pred_visitante": r.pred_visitante,
+                "created_at": r.created_at.isoformat() if r.created_at else None,
+            }
+        )
+    return out
+
+
+@router.post("/late-predictions/{request_id}/approve")
+def approve_late_prediction(
+    request_id: int,
+    payload: LatePredictionReview,
+    db: Session = Depends(get_db),
+    admin: User = Depends(get_current_user),
+) -> dict:
+    try:
+        return PredictionSubmissionService(db).approve_late(request_id, admin, payload.note)
+    except PredictionSubmissionError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.post("/late-predictions/{request_id}/reject")
+def reject_late_prediction(
+    request_id: int,
+    payload: LatePredictionReview,
+    db: Session = Depends(get_db),
+    admin: User = Depends(get_current_user),
+) -> dict:
+    try:
+        return PredictionSubmissionService(db).reject_late(request_id, admin, payload.note)
+    except PredictionSubmissionError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.post("/users/link-participants")
+def link_users_participants(db: Session = Depends(get_db)) -> dict:
+    """Vincula cuentas con participantes por email (idempotente)."""
+    linked = AuthService(db).link_users_to_participants()
+    return {"vinculados": linked}

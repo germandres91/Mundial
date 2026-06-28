@@ -42,6 +42,7 @@ def get_db() -> Generator[Session, None, None]:
 # idempotente para no perder datos ni requerir migraciones manuales.
 _COLUMN_UPGRADES: dict[str, dict[str, str]] = {
     "matches": {"minuto": "VARCHAR(16)"},
+    "predictions": {"locked_at": "TIMESTAMP WITH TIME ZONE"},
 }
 
 

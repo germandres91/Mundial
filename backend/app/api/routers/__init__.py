@@ -8,7 +8,7 @@ Modelo de acceso:
 """
 from fastapi import APIRouter, Depends
 
-from app.api.deps import access_control, require_admin
+from app.api.deps import access_control, get_current_user, require_admin
 from app.api.routers import (
     admin,
     auth,
@@ -18,6 +18,7 @@ from app.api.routers import (
     participants,
     predictions,
     ranking,
+    round_predictions,
     stats,
     tournament,
 )
@@ -26,6 +27,14 @@ api_router = APIRouter()
 
 # Público
 api_router.include_router(auth.router, prefix="/auth", tags=["Autenticación"])
+
+# Predicciones de eliminatorias (lectura/escritura del propio participante)
+api_router.include_router(
+    round_predictions.router,
+    prefix="/round-predictions",
+    tags=["Eliminatorias"],
+    dependencies=[Depends(get_current_user)],
+)
 
 # Requiere sesión (leer todos, escribir solo admin)
 protected = APIRouter(dependencies=[Depends(access_control)])

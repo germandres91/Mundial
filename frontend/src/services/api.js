@@ -97,5 +97,22 @@ export const endpoints = {
   resetUserPassword: (id, password) =>
     api.post(`/admin/users/${id}/reset-password`, { password }).then((r) => r.data),
 
+  roundMatches: () => api.get("/round-predictions/matches").then((r) => r.data),
+  submitRoundPrediction: (payload) =>
+    api.post("/round-predictions/submit", payload).then((r) => r.data),
+
+  knockoutStatus: () => api.get("/admin/knockout/status").then((r) => r.data),
+  knockoutAdvanceR32: () => api.post("/admin/knockout/advance-r32").then((r) => r.data),
+  knockoutAdvanceNext: (fromFase) =>
+    api.post("/admin/knockout/advance-next", null, { params: { from_fase: fromFase } }).then((r) => r.data),
+  roundSubmissions: (fase) =>
+    api.get("/admin/round/submissions", { params: fase ? { fase } : {} }).then((r) => r.data),
+  latePredictions: () => api.get("/admin/late-predictions").then((r) => r.data),
+  approveLatePrediction: (id, note) =>
+    api.post(`/admin/late-predictions/${id}/approve`, { note }).then((r) => r.data),
+  rejectLatePrediction: (id, note) =>
+    api.post(`/admin/late-predictions/${id}/reject`, { note }).then((r) => r.data),
+  linkUsersParticipants: () => api.post("/admin/users/link-participants").then((r) => r.data),
+
   exportUrl: (kind) => `${baseURL}/export/${kind}`,
 };

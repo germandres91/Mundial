@@ -148,3 +148,22 @@ class AuthService:
                 logger.info("Admin recuperado tras error de creación: %s", email)
             else:
                 logger.exception("No se pudo crear el admin inicial (continuando)")
+
+    def link_users_to_participants(self) -> int:
+        """Vincula cuentas de acceso con participantes por email (idempotente)."""
+        from app.repositories.participant_repository import ParticipantRepository
+
+        participants = ParticipantRepository(self.db)
+        linked = 0
+        for user in self.users.list():
+            if user.participant_id is not None:
+                continue
+            part = participants.get_by_email(user.email.lower())
+            if part is None:
+                continue
+            user.participant_id = part.id
+            linked += 1
+        if linked:
+            self.db.commit()
+            logger.info("Usuarios vinculados a participantes: %d", linked)
+        return linked
