@@ -2,11 +2,11 @@ import { useMemo } from "react";
 import { flagUrl } from "../utils/flags";
 
 const ROUNDS = [
-  { key: "Dieciseisavos de final", title: "Dieciseisavos", short: "R32" },
-  { key: "Octavos de final", title: "Octavos", short: "R16" },
-  { key: "Cuartos de final", title: "Cuartos", short: "QF" },
-  { key: "Semifinales", title: "Semifinales", short: "SF" },
-  { key: "Final", title: "Final", short: "F" },
+  { key: "Dieciseisavos de final", title: "Dieciseisavos" },
+  { key: "Octavos de final", title: "Octavos" },
+  { key: "Cuartos de final", title: "Cuartos" },
+  { key: "Semifinales", title: "Semifinales" },
+  { key: "Final", title: "Final" },
 ];
 
 function toTeam(name) {
@@ -88,21 +88,17 @@ function buildRounds(knockout) {
   return rounds;
 }
 
-function Flag({ name, size = "md" }) {
+function Flag({ name }) {
   const url = flagUrl(name);
-  const cls =
-    size === "sm"
-      ? "h-3.5 w-5 shrink-0 rounded-sm"
-      : "h-4 w-6 shrink-0 rounded-sm";
   if (!url) {
-    return <span className={`${cls} bg-slate-200 dark:bg-slate-700`} />;
+    return <span className="h-3.5 w-5 shrink-0 rounded-sm bg-slate-200 dark:bg-slate-700" />;
   }
   return (
     <img
       src={url}
       alt=""
       loading="lazy"
-      className={`${cls} object-cover ring-1 ring-black/10`}
+      className="h-3.5 w-5 shrink-0 rounded-sm object-cover ring-1 ring-black/10"
       onError={(e) => {
         e.currentTarget.style.visibility = "hidden";
       }}
@@ -110,48 +106,24 @@ function Flag({ name, size = "md" }) {
   );
 }
 
-function cardShellClass({ live, projected }) {
-  if (live) {
-    return "border-rose-500/60 ring-2 ring-rose-500/25 shadow-md shadow-rose-500/10";
-  }
-  if (projected) {
-    return "border-dashed border-slate-300 dark:border-slate-600";
-  }
-  return "border-slate-200 dark:border-slate-700";
-}
-
-function LiveBadge({ minuto }) {
-  return (
-    <div className="flex items-center justify-center gap-1 bg-rose-500/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-rose-600 dark:text-rose-400">
-      <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-rose-500" />
-      En vivo{minuto ? ` · ${minuto}` : ""}
-    </div>
-  );
-}
-
-function TeamRow({ team, score, isWinner, dimmed, leading, compact }) {
+function TeamRow({ team, score, isWinner, dimmed, leading }) {
   return (
     <div
-      className={`flex items-center gap-2 px-2.5 py-1.5 ${
+      className={`flex items-center gap-1.5 px-2 py-1 ${
         isWinner ? "bg-emerald-500/10 font-bold text-emerald-700 dark:text-emerald-300" : ""
       } ${dimmed ? "opacity-45" : ""} ${leading ? "font-semibold" : ""}`}
     >
-      {team ? <Flag name={team.equipo} size={compact ? "sm" : "md"} /> : (
-        <span className="h-4 w-6 shrink-0 rounded-sm bg-slate-200 dark:bg-slate-700" />
+      {team ? <Flag name={team.equipo} /> : (
+        <span className="h-3.5 w-5 shrink-0 rounded-sm bg-slate-200 dark:bg-slate-700" />
       )}
-      <span
-        className={`flex-1 leading-tight text-slate-800 dark:text-slate-100 ${
-          compact ? "truncate text-[11px]" : "text-xs sm:text-sm"
-        }`}
-        title={team?.equipo}
-      >
+      <span className="min-w-0 flex-1 truncate text-[11px] leading-tight" title={team?.equipo}>
         {team ? team.equipo : "Por definir"}
       </span>
       {score != null && (
         <span
-          className={`min-w-[1.25rem] text-right tabular-nums ${
-            compact ? "text-[11px]" : "text-xs"
-          } ${isWinner ? "font-extrabold" : "font-medium"}`}
+          className={`w-4 shrink-0 text-right text-[11px] tabular-nums ${
+            isWinner ? "font-extrabold" : "font-medium"
+          }`}
         >
           {score}
         </span>
@@ -160,7 +132,7 @@ function TeamRow({ team, score, isWinner, dimmed, leading, compact }) {
   );
 }
 
-function MatchCardContent({ match, compact = false }) {
+function MatchCard({ match, showIn }) {
   const { a, b, scoreA, scoreB, winner, live, minuto, projected } = match;
   const aWin = winner && a && winner.equipo === a.equipo;
   const bWin = winner && b && winner.equipo === b.equipo;
@@ -170,141 +142,26 @@ function MatchCardContent({ match, compact = false }) {
     live && scoreA != null && scoreB != null && scoreB > scoreA && !winner;
 
   return (
-    <div
-      className={`overflow-hidden rounded-lg border bg-white shadow-sm dark:bg-slate-800 ${cardShellClass(
-        { live, projected }
-      )}`}
-    >
-      {live && <LiveBadge minuto={minuto} />}
-      <TeamRow
-        team={a}
-        score={scoreA}
-        isWinner={aWin}
-        dimmed={winner && !aWin}
-        leading={aLeading}
-        compact={compact}
-      />
-      <div className="border-t border-slate-100 dark:border-slate-700/70" />
-      <TeamRow
-        team={b}
-        score={scoreB}
-        isWinner={bWin}
-        dimmed={winner && !bWin}
-        leading={bLeading}
-        compact={compact}
-      />
-    </div>
-  );
-}
-
-function TreeMatchCard({ match, showIn }) {
-  return (
     <div className="tb-match">
       {showIn && <span className="tb-line-in" aria-hidden />}
-      <div className="tb-card">
-        <MatchCardContent match={match} compact />
-      </div>
-    </div>
-  );
-}
-
-/** Vista móvil: rondas apiladas, tarjetas legibles a ancho completo. */
-function BracketMobile({ rounds, champion, liveCount }) {
-  return (
-    <div className="space-y-5 md:hidden">
-      {liveCount > 0 && (
-        <p className="text-center text-xs font-medium text-rose-500">
-          {liveCount} partido{liveCount > 1 ? "s" : ""} en vivo
-        </p>
-      )}
-
-      {ROUNDS.map((round, ri) => {
-        const cards = rounds[ri] || [];
-        if (!cards.length) return null;
-        const liveInRound = cards.filter((m) => m.live).length;
-
-        return (
-          <section key={round.key} className="space-y-2">
-            <div className="flex items-center justify-between gap-2">
-              <h3 className="text-sm font-bold text-slate-700 dark:text-slate-200">
-                {round.title}
-              </h3>
-              <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-500 dark:bg-slate-800">
-                {round.short}
-                {liveInRound > 0 && (
-                  <span className="ml-1 text-rose-500">· {liveInRound} vivo</span>
-                )}
-              </span>
-            </div>
-            <div className="grid gap-2 sm:grid-cols-2">
-              {cards.map((m) => (
-                <MatchCardContent key={m.key} match={m} />
-              ))}
-            </div>
-          </section>
-        );
-      })}
-
-      <section className="rounded-2xl border border-amber-400/50 bg-gradient-to-b from-amber-400/15 to-amber-500/5 p-5 text-center">
-        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-amber-700/80 dark:text-amber-300/80">
-          Campeón del mundo
-        </p>
-        <span className="text-4xl">🏆</span>
-        {champion ? (
-          <div className="mt-2 flex flex-col items-center gap-2">
-            <Flag name={champion.equipo} />
-            <p className="text-lg font-extrabold">{champion.equipo}</p>
+      <div
+        className={`tb-card overflow-hidden rounded-lg border bg-white shadow-sm dark:bg-slate-800 ${
+          live
+            ? "border-rose-500/60 ring-2 ring-rose-500/25"
+            : projected
+            ? "border-dashed border-slate-300 dark:border-slate-600"
+            : "border-slate-200 dark:border-slate-700"
+        }`}
+      >
+        {live && (
+          <div className="flex items-center justify-center gap-1 bg-rose-500/15 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-rose-600 dark:text-rose-400">
+            <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-rose-500" />
+            {minuto || "Vivo"}
           </div>
-        ) : (
-          <p className="mt-2 text-sm text-slate-500">Por definir</p>
         )}
-      </section>
-    </div>
-  );
-}
-
-/** Vista escritorio: árbol clásico con scroll horizontal. */
-function BracketTree({ rounds, champion, treeHeight }) {
-  return (
-    <div className="tb-scroll-wrap hidden md:block">
-      <p className="tb-scroll-hint mb-2 text-center text-[11px] text-slate-400">
-        Desliza horizontalmente para ver todas las rondas →
-      </p>
-      <div className="tb-scroll">
-        <div className="tb" style={{ "--tb-height": `${treeHeight}px` }}>
-          {ROUNDS.map((round, ri) => (
-            <div key={round.key} className="tb-col">
-              <div className="tb-col-title">{round.title}</div>
-              <div className="tb-body">
-                {(rounds[ri] || []).map((m) => (
-                  <TreeMatchCard key={m.key} match={m} showIn={ri > 0} />
-                ))}
-              </div>
-            </div>
-          ))}
-
-          <div className="tb-col tb-col-champion">
-            <div className="tb-col-title">Campeón</div>
-            <div className="tb-body flex items-center justify-center">
-              <div className="tb-match tb-match-champion">
-                <span className="tb-line-in" aria-hidden />
-                <div className="flex flex-col items-center gap-2 rounded-2xl border border-amber-400/60 bg-gradient-to-b from-amber-400/20 to-amber-500/5 px-5 py-5 text-center shadow-inner">
-                  <span className="text-4xl">🏆</span>
-                  {champion ? (
-                    <>
-                      <Flag name={champion.equipo} />
-                      <span className="max-w-[140px] text-sm font-extrabold leading-tight">
-                        {champion.equipo}
-                      </span>
-                    </>
-                  ) : (
-                    <span className="text-xs text-slate-500">Por definir</span>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        <TeamRow team={a} score={scoreA} isWinner={aWin} dimmed={winner && !aWin} leading={aLeading} />
+        <div className="border-t border-slate-100 dark:border-slate-700/70" />
+        <TeamRow team={b} score={scoreB} isWinner={bWin} dimmed={winner && !bWin} leading={bLeading} />
       </div>
     </div>
   );
@@ -318,7 +175,7 @@ export default function Bracket({ knockout = [] }) {
 
   const treeHeight = useMemo(() => {
     const n = Math.max(...rounds.map((r) => r.length), 1);
-    return Math.max(520, n * 62 + 72);
+    return Math.max(560, n * 56 + 80);
   }, [rounds]);
 
   if (!hasKnockout) {
@@ -331,15 +188,57 @@ export default function Bracket({ knockout = [] }) {
   }
 
   return (
-    <div className="card overflow-hidden p-3 sm:p-4">
+    <div className="card overflow-hidden p-2 sm:p-4">
       {liveCount > 0 && (
-        <p className="mb-3 hidden text-center text-xs text-rose-500 md:block">
-          {liveCount} partido{liveCount > 1 ? "s" : ""} en vivo — actualización automática
+        <p className="mb-2 text-center text-xs text-rose-500">
+          {liveCount} en vivo · actualización automática
         </p>
       )}
 
-      <BracketMobile rounds={rounds} champion={champion} liveCount={liveCount} />
-      <BracketTree rounds={rounds} champion={champion} treeHeight={treeHeight} />
+      <p className="tb-pan-hint mb-2 text-center text-[11px] text-slate-400">
+        Desliza con el dedo para mover el cuadro ← → ↕
+      </p>
+
+      <div className="tb-scroll-wrap">
+        <div className="tb-scroll-fade tb-scroll-fade-left" aria-hidden />
+        <div className="tb-scroll-fade tb-scroll-fade-right" aria-hidden />
+        <div className="tb-scroll">
+          <div className="tb" style={{ "--tb-height": `${treeHeight}px` }}>
+            {ROUNDS.map((round, ri) => (
+              <div key={round.key} className="tb-col">
+                <div className="tb-col-title">{round.title}</div>
+                <div className="tb-body">
+                  {(rounds[ri] || []).map((m) => (
+                    <MatchCard key={m.key} match={m} showIn={ri > 0} />
+                  ))}
+                </div>
+              </div>
+            ))}
+
+            <div className="tb-col tb-col-champion">
+              <div className="tb-col-title">Campeón</div>
+              <div className="tb-body flex items-center justify-center">
+                <div className="tb-match tb-match-champion">
+                  <span className="tb-line-in" aria-hidden />
+                  <div className="flex flex-col items-center gap-1.5 rounded-xl border border-amber-400/60 bg-gradient-to-b from-amber-400/20 to-amber-500/5 px-4 py-4 text-center">
+                    <span className="text-3xl">🏆</span>
+                    {champion ? (
+                      <>
+                        <Flag name={champion.equipo} />
+                        <span className="max-w-[120px] text-xs font-extrabold leading-tight">
+                          {champion.equipo}
+                        </span>
+                      </>
+                    ) : (
+                      <span className="text-[10px] text-slate-500">Por definir</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

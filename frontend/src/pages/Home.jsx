@@ -150,12 +150,9 @@ export default function Home() {
         ) : (
           <Skeleton className="h-96 w-full rounded-2xl" />
         )}
-        <p className="text-xs text-slate-500 md:hidden">
-          Desliza hacia abajo para ver cada ronda del cuadro.
-        </p>
-        <p className="hidden text-xs text-slate-500 md:block">
-          Los ganadores avanzan al siguiente cruce. Partidos en juego con marcador en
-          tiempo real.
+        <p className="text-xs text-slate-500">
+          Cuadro clásico de eliminatorias: desliza con el dedo en cualquier dirección para
+          explorarlo. Se actualiza en vivo con los goles.
         </p>
       </section>
 
