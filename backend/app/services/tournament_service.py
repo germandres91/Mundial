@@ -205,6 +205,8 @@ class TournamentService:
                 "goles_local": m.goles_local,
                 "goles_visitante": m.goles_visitante,
                 "estado": m.estado.value,
+                "minuto": m.minuto,
+                "fecha": m.fecha.isoformat() if m.fecha else None,
             }
             for m in self.matches.list()
             if m.fase and m.fase != "Fase de grupos"

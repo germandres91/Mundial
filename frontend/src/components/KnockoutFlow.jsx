@@ -1,13 +1,20 @@
-function Tie({ top, bottom, highlight, scoreTop, scoreBottom }) {
+function Tie({ top, bottom, highlight, scoreTop, scoreBottom, live, minuto }) {
   const showScore = scoreTop != null && scoreBottom != null;
   return (
     <div
-      className={`min-w-[150px] rounded-xl border p-2 text-sm shadow-sm ${
-        highlight
+      className={`min-w-[160px] rounded-xl border p-2.5 text-sm shadow-sm ${
+        live
+          ? "border-rose-500/50 ring-2 ring-rose-500/20"
+          : highlight
           ? "border-amber-400/50 bg-amber-400/10"
           : "border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-800"
       }`}
     >
+      {live && (
+        <p className="mb-1 text-center text-[10px] font-bold uppercase text-rose-500">
+          En vivo{minuto ? ` · ${minuto}` : ""}
+        </p>
+      )}
       <div className="flex items-center justify-between gap-2">
         <span className="truncate font-medium">{top || "Por definir"}</span>
         {showScore && <span className="font-mono text-xs tabular-nums">{scoreTop}</span>}
@@ -54,7 +61,7 @@ function winnerName(m) {
 }
 
 /**
- * Camino al campeón según resultados oficiales del torneo (igual para todos).
+ * Camino al campeón según resultados oficiales (actualización en vivo).
  */
 export default function KnockoutFlow({ knockout = [] }) {
   const phases = byPhase(knockout);
@@ -63,6 +70,26 @@ export default function KnockoutFlow({ knockout = [] }) {
   const champion = finalMatch ? winnerName(finalMatch) : null;
 
   if (!semifinals.length && !finalMatch) {
+    const r32live = (phases["Dieciseisavos de final"] || []).filter((m) => m.estado === "LIVE");
+    if (r32live.length) {
+      const m = r32live[0];
+      return (
+        <div className="card overflow-x-auto">
+          <div className="flex min-w-max items-stretch gap-8 p-2">
+            <Column title="Dieciseisavos en juego">
+              <Tie
+                top={m.local}
+                bottom={m.visitante}
+                scoreTop={m.goles_local}
+                scoreBottom={m.goles_visitante}
+                live
+                minuto={m.minuto}
+              />
+            </Column>
+          </div>
+        </div>
+      );
+    }
     return (
       <div className="card text-center text-sm text-slate-500">
         El camino al campeón se irá completando a medida que avancen las eliminatorias.
@@ -72,8 +99,6 @@ export default function KnockoutFlow({ knockout = [] }) {
 
   const sf1 = semifinals[0];
   const sf2 = semifinals[1];
-  const sf1Winner = sf1 ? winnerName(sf1) : null;
-  const sf2Winner = sf2 ? winnerName(sf2) : null;
 
   return (
     <div className="card overflow-x-auto">
@@ -86,6 +111,8 @@ export default function KnockoutFlow({ knockout = [] }) {
                 bottom={sf1.visitante}
                 scoreTop={sf1.goles_local}
                 scoreBottom={sf1.goles_visitante}
+                live={sf1.estado === "LIVE"}
+                minuto={sf1.minuto}
               />
             )}
             {sf2 && (
@@ -94,6 +121,8 @@ export default function KnockoutFlow({ knockout = [] }) {
                 bottom={sf2.visitante}
                 scoreTop={sf2.goles_local}
                 scoreBottom={sf2.goles_visitante}
+                live={sf2.estado === "LIVE"}
+                minuto={sf2.minuto}
               />
             )}
           </Column>
@@ -106,6 +135,8 @@ export default function KnockoutFlow({ knockout = [] }) {
               bottom={finalMatch.visitante}
               scoreTop={finalMatch.goles_local}
               scoreBottom={finalMatch.goles_visitante}
+              live={finalMatch.estado === "LIVE"}
+              minuto={finalMatch.minuto}
               highlight
             />
           </Column>
@@ -118,12 +149,6 @@ export default function KnockoutFlow({ knockout = [] }) {
             <span className="text-xs text-slate-500">Campeón del Mundo</span>
           </div>
         </Column>
-
-        {(sf1Winner || sf2Winner) && !finalMatch && (
-          <Column title="Final (proyectada)">
-            <Tie top={sf1Winner} bottom={sf2Winner} highlight />
-          </Column>
-        )}
       </div>
     </div>
   );

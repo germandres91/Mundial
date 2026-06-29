@@ -31,7 +31,11 @@ export const useBracket = () =>
   useQuery({
     queryKey: ["bracket", "official"],
     queryFn: () => endpoints.bracket(),
-    refetchInterval: AUTO_REFRESH,
+    refetchInterval: (query) => {
+      const ko = query.state.data?.knockout || [];
+      const hayEnVivo = ko.some((m) => m.estado === "LIVE");
+      return hayEnVivo ? LIVE_REFRESH : AUTO_REFRESH;
+    },
   });
 
 export const usePredictions = (params) =>

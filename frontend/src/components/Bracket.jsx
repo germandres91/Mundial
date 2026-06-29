@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { flagUrl } from "../utils/flags";
 
 const ROUNDS = [
@@ -8,42 +9,53 @@ const ROUNDS = [
   { key: "Final", title: "Final" },
 ];
 
-function toTeam(name, meta = {}) {
+function toTeam(name) {
   if (!name) return null;
-  return { equipo: name, ...meta };
+  return { equipo: name };
 }
 
-function matchToCard(k) {
-  const finished = k.estado === "FINISHED" && k.goles_local != null && k.goles_visitante != null;
+function matchToCard(k, { projected = false } = {}) {
+  const live = k.estado === "LIVE";
+  const finished = k.estado === "FINISHED";
+  const hasScore = k.goles_local != null && k.goles_visitante != null;
+
   let winner = null;
-  if (finished) {
+  if (finished && hasScore) {
     if (k.goles_local > k.goles_visitante) winner = toTeam(k.local);
     else if (k.goles_visitante > k.goles_local) winner = toTeam(k.visitante);
   }
+
   return {
+    key: k.fifa_id || k.id || `${k.local}-${k.visitante}`,
     a: toTeam(k.local),
     b: toTeam(k.visitante),
-    scoreA: finished ? k.goles_local : null,
-    scoreB: finished ? k.goles_visitante : null,
+    scoreA: hasScore ? k.goles_local : null,
+    scoreB: hasScore ? k.goles_visitante : null,
     winner,
+    live,
+    minuto: k.minuto,
+    projected,
   };
 }
 
-function winnersFromRound(cards) {
-  return cards.map((m) => m.winner).filter(Boolean);
-}
-
-function pairWinners(winners) {
+function projectNextRound(prevCards) {
   const pairs = [];
-  for (let i = 0; i < winners.length; i += 2) {
-    pairs.push({ a: winners[i] || null, b: winners[i + 1] || null });
+  for (let i = 0; i < prevCards.length; i += 2) {
+    const a = prevCards[i]?.winner || null;
+    const b = prevCards[i + 1]?.winner || null;
+    pairs.push({
+      key: `proj-${i / 2}`,
+      a,
+      b,
+      scoreA: null,
+      scoreB: null,
+      winner: null,
+      live: false,
+      minuto: null,
+      projected: true,
+    });
   }
-  return pairs.map((p) => ({
-    ...p,
-    scoreA: null,
-    scoreB: null,
-    winner: null,
-  }));
+  return pairs;
 }
 
 function buildRounds(knockout) {
@@ -57,21 +69,21 @@ function buildRounds(knockout) {
   }
 
   const rounds = [];
-  let projectedWinners = null;
+  let prevCards = null;
 
   for (const { key } of ROUNDS) {
-    if (byPhase[key]?.length) {
-      const cards = byPhase[key].map(matchToCard);
+    const db = byPhase[key];
+    if (db?.length) {
+      const cards = db.map((m) => matchToCard(m));
       rounds.push(cards);
-      projectedWinners = winnersFromRound(cards);
-      continue;
-    }
-    if (projectedWinners?.length) {
-      const cards = pairWinners(projectedWinners);
+      prevCards = cards;
+    } else if (prevCards?.length) {
+      const cards = projectNextRound(prevCards);
       rounds.push(cards);
-      projectedWinners = winnersFromRound(cards);
+      prevCards = cards;
     } else {
       rounds.push([]);
+      prevCards = null;
     }
   }
 
@@ -81,14 +93,14 @@ function buildRounds(knockout) {
 function Flag({ name }) {
   const url = flagUrl(name);
   if (!url) {
-    return <span className="h-3.5 w-5 shrink-0 rounded-sm bg-slate-200 dark:bg-slate-700" />;
+    return <span className="h-4 w-6 shrink-0 rounded-sm bg-slate-200 dark:bg-slate-700" />;
   }
   return (
     <img
       src={url}
       alt=""
       loading="lazy"
-      className="h-3.5 w-5 shrink-0 rounded-sm object-cover ring-1 ring-black/10"
+      className="h-4 w-6 shrink-0 rounded-sm object-cover ring-1 ring-black/10"
       onError={(e) => {
         e.currentTarget.style.visibility = "hidden";
       }}
@@ -96,49 +108,70 @@ function Flag({ name }) {
   );
 }
 
-function TeamRow({ team, score, isWinner, dimmed }) {
+function TeamRow({ team, score, isWinner, dimmed, leading }) {
   return (
     <div
-      className={`flex items-center gap-1.5 px-1.5 py-0.5 ${
-        isWinner ? "font-bold" : ""
-      } ${dimmed ? "opacity-50" : ""}`}
+      className={`flex items-center gap-2 px-2 py-1 ${
+        isWinner ? "bg-emerald-500/10 font-bold text-emerald-700 dark:text-emerald-300" : ""
+      } ${dimmed ? "opacity-45" : ""} ${leading ? "font-semibold" : ""}`}
     >
-      {team ? <Flag name={team.equipo} /> : <span className="h-3.5 w-5 shrink-0 rounded-sm bg-slate-200 dark:bg-slate-700" />}
-      <span className="flex-1 truncate text-[11px] leading-tight">
+      {team ? <Flag name={team.equipo} /> : <span className="h-4 w-6 shrink-0 rounded-sm bg-slate-200 dark:bg-slate-700" />}
+      <span className="flex-1 truncate text-xs leading-tight">
         {team ? team.equipo : "Por definir"}
-        {team?.grupo && (
-          <span className="ml-1 text-[9px] font-normal text-slate-400">
-            {team.posicion}º{team.grupo}
-          </span>
-        )}
       </span>
       {score != null && (
-        <span className="ml-1 w-3 text-right text-[11px] tabular-nums">{score}</span>
+        <span
+          className={`min-w-[1.25rem] text-right text-xs tabular-nums ${
+            isWinner ? "font-extrabold" : "font-medium"
+          }`}
+        >
+          {score}
+        </span>
       )}
     </div>
   );
 }
 
 function MatchCard({ match, showIn }) {
-  const { a, b, scoreA, scoreB, winner } = match;
+  const { a, b, scoreA, scoreB, winner, live, minuto, projected } = match;
   const aWin = winner && a && winner.equipo === a.equipo;
   const bWin = winner && b && winner.equipo === b.equipo;
+  const aLeading =
+    live && scoreA != null && scoreB != null && scoreA > scoreB && !winner;
+  const bLeading =
+    live && scoreA != null && scoreB != null && scoreB > scoreA && !winner;
+
   return (
     <div className="tb-match">
       {showIn && <span className="tb-line-in" />}
-      <div className="tb-card overflow-hidden rounded-lg border border-slate-200 bg-white text-slate-800 shadow-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100">
-        <TeamRow team={a} score={scoreA} isWinner={aWin} dimmed={winner && !aWin} />
+      <div
+        className={`tb-card overflow-hidden rounded-lg border bg-white shadow-sm transition-shadow dark:bg-slate-800 ${
+          live
+            ? "border-rose-500/60 ring-2 ring-rose-500/30 shadow-rose-500/10"
+            : projected
+            ? "border-dashed border-slate-300 dark:border-slate-600"
+            : "border-slate-200 dark:border-slate-700"
+        }`}
+      >
+        {live && (
+          <div className="flex items-center justify-center gap-1 bg-rose-500/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-rose-600 dark:text-rose-400">
+            <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-rose-500" />
+            En vivo{minuto ? ` · ${minuto}` : ""}
+          </div>
+        )}
+        <TeamRow team={a} score={scoreA} isWinner={aWin} dimmed={winner && !aWin} leading={aLeading} />
         <div className="border-t border-slate-100 dark:border-slate-700/70" />
-        <TeamRow team={b} score={scoreB} isWinner={bWin} dimmed={winner && !bWin} />
+        <TeamRow team={b} score={scoreB} isWinner={bWin} dimmed={winner && !bWin} leading={bLeading} />
       </div>
     </div>
   );
 }
 
 export default function Bracket({ knockout = [] }) {
-  const rounds = buildRounds(knockout);
+  const rounds = useMemo(() => buildRounds(knockout), [knockout]);
   const champion = rounds[rounds.length - 1]?.[0]?.winner || null;
   const hasKnockout = (knockout || []).length > 0;
+  const liveCount = (knockout || []).filter((m) => m.estado === "LIVE").length;
 
   if (!hasKnockout) {
     return (
@@ -151,14 +184,20 @@ export default function Bracket({ knockout = [] }) {
 
   return (
     <div className="card p-3">
+      {liveCount > 0 && (
+        <p className="mb-2 text-center text-xs text-rose-500">
+          {liveCount} partido{liveCount > 1 ? "s" : ""} en vivo — el cuadro se actualiza
+          automáticamente
+        </p>
+      )}
       <div className="tb-scroll">
         <div className="tb">
           {ROUNDS.map((round, ri) => (
             <div key={round.key} className="tb-col">
               <div className="tb-col-title">{round.title}</div>
               <div className="tb-body">
-                {(rounds[ri] || []).map((m, mi) => (
-                  <MatchCard key={mi} match={m} showIn={ri > 0} />
+                {(rounds[ri] || []).map((m) => (
+                  <MatchCard key={m.key} match={m} showIn={ri > 0} />
                 ))}
               </div>
             </div>
@@ -169,12 +208,12 @@ export default function Bracket({ knockout = [] }) {
             <div className="tb-body flex items-center justify-center">
               <div className="tb-match !flex-none">
                 <span className="tb-line-in" />
-                <div className="flex flex-col items-center gap-1 rounded-2xl border border-amber-400/60 bg-gradient-to-b from-amber-400/20 to-amber-500/5 px-4 py-4 text-center">
-                  <span className="text-3xl">🏆</span>
+                <div className="flex flex-col items-center gap-2 rounded-2xl border border-amber-400/60 bg-gradient-to-b from-amber-400/20 to-amber-500/5 px-5 py-5 text-center shadow-inner">
+                  <span className="text-4xl">🏆</span>
                   {champion ? (
                     <>
                       <Flag name={champion.equipo} />
-                      <span className="text-sm font-extrabold">{champion.equipo}</span>
+                      <span className="text-base font-extrabold">{champion.equipo}</span>
                     </>
                   ) : (
                     <span className="text-xs text-slate-500">Por definir</span>

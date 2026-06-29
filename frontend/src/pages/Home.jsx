@@ -133,30 +133,20 @@ export default function Home() {
       )}
 
       <section className="space-y-3">
-        <div className="flex items-center justify-between">
-          <h2 className="text-xl font-bold">Camino al campeón 🏆</h2>
-          <span className="badge bg-emerald-500/15 text-emerald-500">Resultados oficiales</span>
-        </div>
-        {bracket ? (
-          <KnockoutFlow knockout={bracket.knockout || []} />
-        ) : (
-          <Skeleton className="h-48 w-full rounded-2xl" />
-        )}
-      </section>
-
-      <section className="space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h2 className="text-xl font-bold">Cuadro del Mundial 🗺️</h2>
-          <div className="flex items-center gap-2">
-            <span className="badge bg-emerald-500/15 text-emerald-500">
-              <span className="mr-1 inline-block h-2 w-2 animate-pulse rounded-full bg-emerald-500" />
-              EN VIVO
-            </span>
-            <span className="badge bg-brand-500/15 text-brand-400">Resultados reales</span>
+          <div className="flex flex-wrap items-center gap-2">
+            {koSummary.live > 0 && (
+              <span className="badge bg-rose-500/15 text-rose-400">
+                <span className="mr-1 inline-block h-2 w-2 animate-pulse rounded-full bg-rose-500" />
+                {koSummary.live} en vivo
+              </span>
+            )}
+            <span className="badge bg-emerald-500/15 text-emerald-500">Resultados oficiales</span>
           </div>
         </div>
         {bracket ? (
-          <Bracket knockout={bracket.knockout || []} />
+          <Bracket knockout={knockout} />
         ) : (
           <Skeleton className="h-96 w-full rounded-2xl" />
         )}
@@ -164,8 +154,21 @@ export default function Home() {
           👉 Desliza el cuadro de lado a lado para ver todas las rondas.
         </p>
         <p className="text-xs text-slate-500">
-          Los cruces y ganadores se actualizan con los resultados oficiales del torneo.
+          Los ganadores avanzan al siguiente cruce en cuanto se confirma el resultado. Los
+          partidos en juego muestran marcador en tiempo real.
         </p>
+      </section>
+
+      <section className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-bold">Camino al campeón 🏆</h2>
+          <span className="badge bg-emerald-500/15 text-emerald-500">Resultados oficiales</span>
+        </div>
+        {bracket ? (
+          <KnockoutFlow knockout={knockout} />
+        ) : (
+          <Skeleton className="h-48 w-full rounded-2xl" />
+        )}
       </section>
 
       <section className="space-y-3">
