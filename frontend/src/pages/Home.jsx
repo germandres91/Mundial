@@ -150,12 +150,12 @@ export default function Home() {
         ) : (
           <Skeleton className="h-96 w-full rounded-2xl" />
         )}
-        <p className="text-xs text-slate-500 sm:hidden">
-          👉 Desliza el cuadro de lado a lado para ver todas las rondas.
+        <p className="text-xs text-slate-500 md:hidden">
+          Desliza hacia abajo para ver cada ronda del cuadro.
         </p>
-        <p className="text-xs text-slate-500">
-          Los ganadores avanzan al siguiente cruce en cuanto se confirma el resultado. Los
-          partidos en juego muestran marcador en tiempo real.
+        <p className="hidden text-xs text-slate-500 md:block">
+          Los ganadores avanzan al siguiente cruce. Partidos en juego con marcador en
+          tiempo real.
         </p>
       </section>
 

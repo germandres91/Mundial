@@ -47,55 +47,99 @@
 /* ===================== Bracket eliminatorio ===================== */
 :root {
   --tb-line: #cbd5e1;
+  --tb-height: 760px;
 }
 .dark {
   --tb-line: #334155;
 }
 
-.tb-scroll {
-  overflow: auto;
-  -webkit-overflow-scrolling: touch;
+.tb-scroll-wrap {
+  position: relative;
+  margin: 0 -0.25rem;
 }
+
+.tb-scroll-hint {
+  display: none;
+}
+@media (max-width: 1023px) {
+  .tb-scroll-hint {
+    display: block;
+  }
+}
+
+.tb-scroll {
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  scroll-snap-type: x proximity;
+  scroll-padding-inline: 1rem;
+  padding-bottom: 0.5rem;
+  /* Indicador visual de más contenido a la derecha */
+  mask-image: linear-gradient(to right, black calc(100% - 48px), transparent);
+  -webkit-mask-image: linear-gradient(to right, black calc(100% - 48px), transparent);
+}
+
+.tb-scroll::-webkit-scrollbar {
+  height: 6px;
+}
+.tb-scroll::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 999px;
+}
+.dark .tb-scroll::-webkit-scrollbar-thumb {
+  background: #475569;
+}
+
 .tb {
   display: flex;
   align-items: stretch;
   min-width: max-content;
-  /* Altura fija para que TODAS las columnas midan igual y los conectores
-     queden alineados. 16 llaves en la 1ª ronda => ~47px por llave (sin
-     solaparse). */
-  height: 760px;
+  height: var(--tb-height);
+  min-height: 520px;
 }
+
 .tb-col {
   display: flex;
   flex-direction: column;
-  min-width: 196px;
-}
-.tb-match {
-  /* Evita que las tarjetas se compriman y se solapen */
-  min-height: 38px;
+  flex-shrink: 0;
+  min-width: 200px;
+  scroll-snap-align: start;
 }
 
-/* Compacta el cuadro en pantallas pequeñas (móvil) */
-@media (max-width: 640px) {
-  .tb {
-    height: 720px;
-  }
+.tb-col-champion {
+  min-width: 168px;
+}
+
+.tb-match {
+  flex: 1 1 0;
+  display: flex;
+  align-items: center;
+  position: relative;
+  min-height: 44px;
+  padding: 2px 0;
+}
+
+.tb-match-champion {
+  flex: none;
+  min-height: auto;
+}
+
+@media (min-width: 1024px) {
   .tb-col {
-    min-width: 158px;
+    min-width: 220px;
   }
-  .tb-body {
-    padding-right: 22px;
-  }
-  .tb-col:not(:last-child) .tb-match::after,
-  .tb-col:not(:last-child) .tb-match::before,
-  .tb-line-in {
-    right: -11px;
-    width: 11px;
-  }
-  .tb-line-in {
-    left: -11px;
+  .tb-scroll {
+    mask-image: none;
+    -webkit-mask-image: none;
   }
 }
+
+@media (min-width: 1280px) {
+  .tb-col {
+    min-width: 240px;
+  }
+}
+
 .tb-col-title {
   text-align: center;
   font-size: 11px;
@@ -103,25 +147,24 @@
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: #94a3b8;
-  padding: 6px 0;
+  padding: 8px 4px;
+  flex-shrink: 0;
 }
+
 .tb-body {
   display: flex;
   flex-direction: column;
   flex: 1 1 auto;
   padding-right: 34px;
+  justify-content: space-around;
+  gap: 2px;
 }
+
 .tb-col:last-child .tb-body {
   padding-right: 0;
 }
-.tb-match {
-  flex: 1 1 0;
-  display: flex;
-  align-items: center;
-  position: relative;
-  min-height: 0;
-}
-/* Línea horizontal de salida (hacia el centro del espacio entre columnas) */
+
+/* Línea horizontal de salida */
 .tb-col:not(:last-child) .tb-match::after {
   content: "";
   position: absolute;
@@ -130,24 +173,28 @@
   width: 17px;
   height: 2px;
   background: var(--tb-line);
+  pointer-events: none;
 }
-/* Mitades verticales que unen cada par de partidos */
+
 .tb-col:not(:last-child) .tb-match::before {
   content: "";
   position: absolute;
   right: -17px;
   width: 2px;
   background: var(--tb-line);
+  pointer-events: none;
 }
+
 .tb-col:not(:last-child) .tb-match:nth-child(odd)::before {
   top: 50%;
   height: 50%;
 }
+
 .tb-col:not(:last-child) .tb-match:nth-child(even)::before {
   bottom: 50%;
   height: 50%;
 }
-/* Línea horizontal de entrada (desde el centro hacia la columna siguiente) */
+
 .tb-line-in {
   position: absolute;
   left: -17px;
@@ -155,7 +202,10 @@
   width: 17px;
   height: 2px;
   background: var(--tb-line);
+  pointer-events: none;
 }
+
 .tb-card {
   width: 100%;
+  min-width: 0;
 }
