@@ -27,10 +27,10 @@ export const useMatches = (params) =>
 export const useParticipants = () =>
   useQuery({ queryKey: ["participants"], queryFn: endpoints.participants });
 
-export const useBracket = (participantId) =>
+export const useBracket = () =>
   useQuery({
-    queryKey: ["bracket", participantId],
-    queryFn: () => endpoints.bracket(participantId),
+    queryKey: ["bracket", "official"],
+    queryFn: () => endpoints.bracket(),
     refetchInterval: AUTO_REFRESH,
   });
 

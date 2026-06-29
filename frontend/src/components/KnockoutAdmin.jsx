@@ -2,7 +2,6 @@ import { useState } from "react";
 import { useToast } from "../context/ToastContext";
 import {
   useKnockoutStatus,
-  useLatePredictions,
   useMutationWithRefresh,
   useRoundSubmissions,
 } from "../hooks/useApi";
@@ -16,9 +15,7 @@ const FASES = [
   "Final",
 ];
 
-function MatrixCell({ cell, onApprove, onReject, busy }) {
-  const [open, setOpen] = useState(false);
-
+function MatrixCell({ cell }) {
   if (cell.submitted) {
     return (
       <span
@@ -29,51 +26,6 @@ function MatrixCell({ cell, onApprove, onReject, busy }) {
       </span>
     );
   }
-
-  if (cell.pending) {
-    const score = `${cell.pending_pred_local ?? "?"}-${cell.pending_pred_visitante ?? "?"}`;
-    return (
-      <div className="relative inline-block">
-        <button
-          type="button"
-          className="rounded px-1 py-0.5 text-amber-600 hover:bg-amber-100 dark:hover:bg-amber-950/40"
-          title={`Pendiente ${score}. Clic para aprobar o rechazar.`}
-          disabled={busy}
-          onClick={() => setOpen((v) => !v)}
-        >
-          ⏳
-          <span className="ml-0.5 font-mono text-[10px]">{score}</span>
-        </button>
-        {open && (
-          <div className="absolute left-1/2 top-full z-20 mt-1 flex -translate-x-1/2 gap-1 rounded-lg border border-slate-200 bg-white p-1 shadow-lg dark:border-slate-700 dark:bg-slate-900">
-            <button
-              type="button"
-              className="rounded bg-emerald-600 px-2 py-1 text-[10px] font-semibold text-white hover:bg-emerald-700"
-              disabled={busy}
-              onClick={() => {
-                onApprove(cell.request_id, score);
-                setOpen(false);
-              }}
-            >
-              ✓ Aprobar
-            </button>
-            <button
-              type="button"
-              className="rounded bg-rose-100 px-2 py-1 text-[10px] font-semibold text-rose-700 hover:bg-rose-200 dark:bg-rose-950/50 dark:text-rose-300"
-              disabled={busy}
-              onClick={() => {
-                onReject(cell.request_id);
-                setOpen(false);
-              }}
-            >
-              ✗
-            </button>
-          </div>
-        )}
-      </div>
-    );
-  }
-
   return <span className="text-slate-300">—</span>;
 }
 
@@ -83,12 +35,10 @@ export default function KnockoutAdmin() {
   const [savingBackup, setSavingBackup] = useState(false);
   const { data: status, refetch: refetchStatus } = useKnockoutStatus();
   const { data: matrix, refetch: refetchMatrix } = useRoundSubmissions(faseFilter || null);
-  const { data: lateList, refetch: refetchLate } = useLatePredictions();
 
   const refreshAll = () => {
     refetchStatus();
     refetchMatrix();
-    refetchLate();
   };
 
   const advanceR32 = useMutationWithRefresh(endpoints.knockoutAdvanceR32, {
@@ -130,44 +80,6 @@ export default function KnockoutAdmin() {
     onError: (e) => toast.error(e.response?.data?.detail || "Error al vincular"),
   });
 
-  const approve = useMutationWithRefresh(
-    (id) => endpoints.approveLatePrediction(id),
-    {
-      onSuccess: () => {
-        toast.success("Predicción aprobada");
-        refreshAll();
-      },
-      onError: (e) => toast.error(e.response?.data?.detail || "No se pudo aprobar"),
-    }
-  );
-
-  const reject = useMutationWithRefresh(
-    (id) => endpoints.rejectLatePrediction(id),
-    {
-      onSuccess: () => {
-        toast.success("Solicitud rechazada");
-        refreshAll();
-      },
-      onError: (e) => toast.error(e.response?.data?.detail || "No se pudo rechazar"),
-    }
-  );
-
-  const handleApproveFromMatrix = (requestId, score) => {
-    if (!requestId) return;
-    if (window.confirm(`¿Aprobar predicción ${score}?`)) {
-      approve.mutate(requestId);
-    }
-  };
-
-  const handleRejectFromMatrix = (requestId) => {
-    if (!requestId) return;
-    if (window.confirm("¿Rechazar esta solicitud?")) {
-      reject.mutate(requestId);
-    }
-  };
-
-  const matrixBusy = approve.isPending || reject.isPending;
-
   const handleSaveBackup = async () => {
     setSavingBackup(true);
     try {
@@ -197,7 +109,7 @@ export default function KnockoutAdmin() {
         <div>
           <h2 className="font-semibold">Eliminatorias — predicciones por ronda</h2>
           <p className="text-sm text-slate-500">
-            Genera cruces, revisa quién envió marcadores y aprueba envíos fuera de plazo.
+            Genera cruces y revisa quién envió marcadores de eliminatorias.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -278,46 +190,6 @@ export default function KnockoutAdmin() {
         ))}
       </div>
 
-      {(lateList?.length ?? 0) > 0 && (
-        <div>
-          <h3 className="mb-2 text-sm font-semibold">Aprobaciones pendientes</h3>
-          <div className="space-y-2">
-            {lateList.map((r) => (
-              <div
-                key={r.id}
-                className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm dark:border-amber-900/50 dark:bg-amber-950/30"
-              >
-                <div>
-                  <strong>{r.participant_nombre}</strong> — {r.partido}{" "}
-                  <span className="text-slate-500">({r.fase})</span>
-                  <div className="font-mono">
-                    Predicción: {r.pred_local} - {r.pred_visitante}
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    className="btn-primary px-3 py-1 text-sm"
-                    disabled={approve.isPending}
-                    onClick={() => approve.mutate(r.id)}
-                    title="Aprobar"
-                  >
-                    ✓ Aprobar
-                  </button>
-                  <button
-                    className="btn-ghost px-3 py-1 text-sm text-rose-500"
-                    disabled={reject.isPending}
-                    onClick={() => reject.mutate(r.id)}
-                    title="Rechazar"
-                  >
-                    ✗
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
       <div>
         <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
           <h3 className="text-sm font-semibold">Matriz de envíos</h3>
@@ -368,12 +240,7 @@ export default function KnockoutAdmin() {
                     </td>
                     {p.cells.map((cell, idx) => (
                       <td key={idx} className="px-1 py-1.5 text-center">
-                        <MatrixCell
-                          cell={cell}
-                          busy={matrixBusy}
-                          onApprove={handleApproveFromMatrix}
-                          onReject={handleRejectFromMatrix}
-                        />
+                        <MatrixCell cell={cell} />
                       </td>
                     ))}
                   </tr>
@@ -382,9 +249,7 @@ export default function KnockoutAdmin() {
             </table>
           </div>
         )}
-        <p className="mt-2 text-xs text-slate-500">
-          ✓ enviado · ⏳ pendiente (clic para aprobar/rechazar) · — sin enviar
-        </p>
+        <p className="mt-2 text-xs text-slate-500">✓ enviado · — sin enviar</p>
       </div>
     </div>
   );

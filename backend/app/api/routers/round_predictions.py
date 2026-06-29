@@ -22,7 +22,7 @@ def _handle_error(exc: PredictionSubmissionError) -> HTTPException:
         status = 404
     elif exc.code == "forbidden":
         status = 403
-    elif exc.code in ("locked", "pending"):
+    elif exc.code in ("locked",):
         status = 409
     return HTTPException(status_code=status, detail=str(exc))
 

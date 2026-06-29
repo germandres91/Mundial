@@ -198,6 +198,7 @@ class TournamentService:
         knockout = [
             {
                 "id": m.id,
+                "fifa_id": m.fifa_id,
                 "fase": m.fase,
                 "local": m.local,
                 "visitante": m.visitante,

@@ -1,26 +1,81 @@
 import { flagUrl } from "../utils/flags";
 
 const ROUNDS = [
-  { key: "r32", title: "Dieciseisavos" },
-  { key: "r16", title: "Octavos" },
-  { key: "qf", title: "Cuartos" },
-  { key: "sf", title: "Semifinales" },
-  { key: "final", title: "Final" },
+  { key: "Dieciseisavos de final", title: "Dieciseisavos" },
+  { key: "Octavos de final", title: "Octavos" },
+  { key: "Cuartos de final", title: "Cuartos" },
+  { key: "Semifinales", title: "Semifinales" },
+  { key: "Final", title: "Final" },
 ];
 
-// Orden de siembra estándar para un cuadro de 32 (posiciones de los slots).
-function seedOrder(n) {
-  let arr = [1, 2];
-  while (arr.length < n) {
-    const len = arr.length * 2;
-    const next = [];
-    for (const s of arr) {
-      next.push(s);
-      next.push(len + 1 - s);
-    }
-    arr = next;
+function toTeam(name, meta = {}) {
+  if (!name) return null;
+  return { equipo: name, ...meta };
+}
+
+function matchToCard(k) {
+  const finished = k.estado === "FINISHED" && k.goles_local != null && k.goles_visitante != null;
+  let winner = null;
+  if (finished) {
+    if (k.goles_local > k.goles_visitante) winner = toTeam(k.local);
+    else if (k.goles_visitante > k.goles_local) winner = toTeam(k.visitante);
   }
-  return arr;
+  return {
+    a: toTeam(k.local),
+    b: toTeam(k.visitante),
+    scoreA: finished ? k.goles_local : null,
+    scoreB: finished ? k.goles_visitante : null,
+    winner,
+  };
+}
+
+function winnersFromRound(cards) {
+  return cards.map((m) => m.winner).filter(Boolean);
+}
+
+function pairWinners(winners) {
+  const pairs = [];
+  for (let i = 0; i < winners.length; i += 2) {
+    pairs.push({ a: winners[i] || null, b: winners[i + 1] || null });
+  }
+  return pairs.map((p) => ({
+    ...p,
+    scoreA: null,
+    scoreB: null,
+    winner: null,
+  }));
+}
+
+function buildRounds(knockout) {
+  const byPhase = {};
+  for (const k of knockout || []) {
+    if (!k.fase) continue;
+    (byPhase[k.fase] ||= []).push(k);
+  }
+  for (const phase of Object.keys(byPhase)) {
+    byPhase[phase].sort((a, b) => (a.fifa_id || "").localeCompare(b.fifa_id || ""));
+  }
+
+  const rounds = [];
+  let projectedWinners = null;
+
+  for (const { key } of ROUNDS) {
+    if (byPhase[key]?.length) {
+      const cards = byPhase[key].map(matchToCard);
+      rounds.push(cards);
+      projectedWinners = winnersFromRound(cards);
+      continue;
+    }
+    if (projectedWinners?.length) {
+      const cards = pairWinners(projectedWinners);
+      rounds.push(cards);
+      projectedWinners = winnersFromRound(cards);
+    } else {
+      rounds.push([]);
+    }
+  }
+
+  return rounds;
 }
 
 function Flag({ name }) {
@@ -51,7 +106,7 @@ function TeamRow({ team, score, isWinner, dimmed }) {
       {team ? <Flag name={team.equipo} /> : <span className="h-3.5 w-5 shrink-0 rounded-sm bg-slate-200 dark:bg-slate-700" />}
       <span className="flex-1 truncate text-[11px] leading-tight">
         {team ? team.equipo : "Por definir"}
-        {team && (
+        {team?.grupo && (
           <span className="ml-1 text-[9px] font-normal text-slate-400">
             {team.posicion}º{team.grupo}
           </span>
@@ -80,66 +135,16 @@ function MatchCard({ match, showIn }) {
   );
 }
 
-export default function Bracket({ qualified = [], knockout = [] }) {
-  const teams = qualified.slice(0, 32);
+export default function Bracket({ knockout = [] }) {
+  const rounds = buildRounds(knockout);
+  const champion = rounds[rounds.length - 1]?.[0]?.winner || null;
+  const hasKnockout = (knockout || []).length > 0;
 
-  const finished = (knockout || []).filter(
-    (m) => m.estado === "FINISHED" && m.goles_local != null
-  );
-
-  // Busca el resultado real de un cruce por nombres de equipo.
-  const findResult = (a, b) => {
-    if (!a || !b) return null;
-    const m = finished.find(
-      (k) =>
-        (k.local === a.equipo && k.visitante === b.equipo) ||
-        (k.local === b.equipo && k.visitante === a.equipo)
-    );
-    if (!m) return null;
-    const aIsHome = m.local === a.equipo;
-    const sA = aIsHome ? m.goles_local : m.goles_visitante;
-    const sB = aIsHome ? m.goles_visitante : m.goles_local;
-    const winner = sA === sB ? null : sA > sB ? a : b;
-    return { scoreA: sA, scoreB: sB, winner };
-  };
-
-  const decorate = (pairs) =>
-    pairs.map(({ a, b }) => {
-      const r = findResult(a, b);
-      return {
-        a,
-        b,
-        scoreA: r ? r.scoreA : null,
-        scoreB: r ? r.scoreB : null,
-        winner: r ? r.winner : null,
-      };
-    });
-
-  // Construye la primera ronda (32 -> 16 cruces) por siembra.
-  const order = seedOrder(32);
-  const slots = order.map((seed) => teams[seed - 1] || null);
-  const firstPairs = [];
-  for (let i = 0; i < 32; i += 2) firstPairs.push({ a: slots[i], b: slots[i + 1] });
-
-  const rounds = [];
-  let current = decorate(firstPairs);
-  rounds.push(current);
-  for (let r = 1; r < ROUNDS.length; r++) {
-    const winners = current.map((m) => m.winner);
-    const pairs = [];
-    for (let i = 0; i < winners.length; i += 2) {
-      pairs.push({ a: winners[i] || null, b: winners[i + 1] || null });
-    }
-    current = decorate(pairs);
-    rounds.push(current);
-  }
-
-  const champion = rounds[rounds.length - 1][0]?.winner || null;
-
-  if (!teams.length) {
+  if (!hasKnockout) {
     return (
       <div className="card text-center text-sm text-slate-500">
-        El cuadro se generará cuando haya posiciones de grupo disponibles.
+        El cuadro de eliminatorias se mostrará cuando el administrador publique los
+        dieciseisavos de final.
       </div>
     );
   }
@@ -152,14 +157,13 @@ export default function Bracket({ qualified = [], knockout = [] }) {
             <div key={round.key} className="tb-col">
               <div className="tb-col-title">{round.title}</div>
               <div className="tb-body">
-                {rounds[ri].map((m, mi) => (
+                {(rounds[ri] || []).map((m, mi) => (
                   <MatchCard key={mi} match={m} showIn={ri > 0} />
                 ))}
               </div>
             </div>
           ))}
 
-          {/* Columna del campeón */}
           <div className="tb-col" style={{ minWidth: 180 }}>
             <div className="tb-col-title">Campeón</div>
             <div className="tb-body flex items-center justify-center">
