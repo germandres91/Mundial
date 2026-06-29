@@ -1,19 +1,61 @@
+import { useMemo } from "react";
 import Bracket from "../components/Bracket";
-import GroupCard from "../components/GroupCard";
 import KnockoutFlow from "../components/KnockoutFlow";
 import LiveMatchCard from "../components/LiveMatchCard";
 import StatCard from "../components/StatCard";
 import { Skeleton } from "../components/Skeleton";
-import { useBracket, useDashboard, useMatches } from "../hooks/useApi";
+import { useBracket, useDashboard, useMatches, useRanking } from "../hooks/useApi";
+import { formatColombia } from "../utils/dates";
+
+const KO_PHASES = [
+  "Dieciseisavos de final",
+  "Octavos de final",
+  "Cuartos de final",
+  "Semifinales",
+  "Final",
+];
+
+function scoreLine(m) {
+  if (m?.goles_local != null && m?.goles_visitante != null) {
+    return `${m.goles_local} - ${m.goles_visitante}`;
+  }
+  return null;
+}
 
 export default function Home() {
   const { data: dashboard } = useDashboard();
-  const { data: bracket, isLoading } = useBracket();
+  const { data: bracket } = useBracket();
   const { data: liveMatches } = useMatches({ estado: "LIVE" });
+  const { data: ranking } = useRanking();
 
   const liveMatch = liveMatches?.[0];
   const hasScore = (m) => m?.goles_local != null && m?.goles_visitante != null;
   const matchScore = (m) => (hasScore(m) ? `${m.goles_local} - ${m.goles_visitante}` : "vs");
+
+  const knockout = bracket?.knockout || [];
+
+  const koSummary = useMemo(() => {
+    const finished = knockout.filter((m) => m.estado === "FINISHED").length;
+    const live = knockout.filter((m) => m.estado === "LIVE").length;
+    const scheduled = knockout.filter((m) => m.estado === "SCHEDULED").length;
+
+    let currentPhase = "Eliminatorias";
+    for (const phase of KO_PHASES) {
+      const inPhase = knockout.filter((m) => m.fase === phase);
+      if (inPhase.some((m) => m.estado !== "FINISHED")) {
+        currentPhase = phase;
+        break;
+      }
+    }
+
+    const nextKo = knockout
+      .filter((m) => m.estado === "SCHEDULED" && m.fecha)
+      .sort((a, b) => new Date(a.fecha) - new Date(b.fecha))[0];
+
+    return { finished, live, scheduled, total: knockout.length, currentPhase, nextKo };
+  }, [knockout]);
+
+  const topThree = (ranking || []).slice(0, 3);
 
   return (
     <div className="space-y-8">
@@ -23,8 +65,8 @@ export default function Home() {
         </p>
         <h1 className="mt-1 text-3xl font-extrabold sm:text-4xl">Mundial 2026 🏟️</h1>
         <p className="mt-2 max-w-2xl text-sm text-brand-100">
-          Sigue el avance del torneo en tiempo real: fase de grupos y eliminatorias se
-          actualizan con los resultados oficiales para todos.
+          Sigue las eliminatorias del Mundial en tiempo real: cuadro oficial, partidos en
+          vivo y ranking de la quiniela.
         </p>
       </div>
 
@@ -127,28 +169,106 @@ export default function Home() {
       </section>
 
       <section className="space-y-3">
-        <div className="flex items-center justify-between">
-          <h2 className="text-xl font-bold">Fase de grupos</h2>
-          <span className="flex items-center gap-1.5 text-xs text-slate-500">
-            <span className="h-2 w-2 rounded-full bg-emerald-500" /> Clasifican (top 2)
-          </span>
-        </div>
-        {isLoading ? (
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {Array.from({ length: 8 }).map((_, i) => (
-              <Skeleton key={i} className="h-40 w-full rounded-2xl" />
-            ))}
+        <h2 className="text-xl font-bold">Resumen del torneo</h2>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="card space-y-2">
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+              Fase actual
+            </p>
+            <p className="text-lg font-bold">{koSummary.currentPhase}</p>
+            {koSummary.total > 0 ? (
+              <p className="text-sm text-slate-500">
+                {koSummary.finished} finalizados · {koSummary.live} en vivo ·{" "}
+                {koSummary.scheduled} por jugar
+              </p>
+            ) : (
+              <p className="text-sm text-slate-500">Publica los dieciseisavos en Admin.</p>
+            )}
           </div>
-        ) : (
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {(bracket?.grupos || []).map((g) => (
-              <GroupCard key={g.grupo} grupo={g.grupo} rows={g.posiciones || []} />
-            ))}
+
+          <div className="card space-y-2">
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+              Último resultado
+            </p>
+            {dashboard?.ultimo_resultado ? (
+              <>
+                <p className="text-lg font-bold">
+                  {dashboard.ultimo_resultado.local}{" "}
+                  {scoreLine(dashboard.ultimo_resultado) || "vs"}{" "}
+                  {dashboard.ultimo_resultado.visitante}
+                </p>
+                <p className="text-sm text-slate-500">
+                  {dashboard.ultimo_resultado.fase}
+                  {dashboard.ultimo_resultado.fecha &&
+                    ` · ${formatColombia(dashboard.ultimo_resultado.fecha, {
+                      day: "2-digit",
+                      month: "short",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}`}
+                </p>
+              </>
+            ) : (
+              <p className="text-sm text-slate-500">Aún no hay resultados registrados.</p>
+            )}
+          </div>
+
+          <div className="card space-y-2">
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+              Próximo partido (eliminatorias)
+            </p>
+            {koSummary.nextKo ? (
+              <>
+                <p className="text-lg font-bold">
+                  {koSummary.nextKo.local} vs {koSummary.nextKo.visitante}
+                </p>
+                <p className="text-sm text-slate-500">
+                  {koSummary.nextKo.fase}
+                  {koSummary.nextKo.fecha &&
+                    ` · ${formatColombia(koSummary.nextKo.fecha, {
+                      day: "2-digit",
+                      month: "short",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}`}
+                </p>
+              </>
+            ) : dashboard?.proximo_partido ? (
+              <>
+                <p className="text-lg font-bold">
+                  {dashboard.proximo_partido.local} vs {dashboard.proximo_partido.visitante}
+                </p>
+                <p className="text-sm text-slate-500">{dashboard.proximo_partido.fase}</p>
+              </>
+            ) : (
+              <p className="text-sm text-slate-500">No hay partidos programados.</p>
+            )}
+          </div>
+        </div>
+
+        {topThree.length > 0 && (
+          <div className="card">
+            <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
+              Top 3 de la quiniela
+            </p>
+            <ol className="space-y-2">
+              {topThree.map((r, i) => (
+                <li
+                  key={r.participant_id}
+                  className="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2 dark:bg-slate-800/60"
+                >
+                  <span className="flex items-center gap-2">
+                    <span className="text-lg">{["🥇", "🥈", "🥉"][i]}</span>
+                    <span className="font-medium">{r.nombre}</span>
+                  </span>
+                  <span className="font-bold tabular-nums text-brand-600 dark:text-brand-400">
+                    {r.puntos_totales} pts
+                  </span>
+                </li>
+              ))}
+            </ol>
           </div>
         )}
-        <p className="text-xs text-slate-500">
-          Posiciones según los resultados oficiales registrados en el torneo.
-        </p>
       </section>
     </div>
   );
