@@ -25442,6 +25442,16 @@
       "goles_local_90": 2,
       "goles_visitante_90": 2,
       "ganador": "Bélgica"
+    },
+    {
+      "fifa_id": "KO-R32-9",
+      "local": "Estados Unidos",
+      "visitante": "Bosnia / Herzegovina",
+      "goles_local": 2,
+      "goles_visitante": 0,
+      "estado": "FINISHED",
+      "fase": "Dieciseisavos de final",
+      "ganador": "Estados Unidos"
     }
   ],
   "scores": [

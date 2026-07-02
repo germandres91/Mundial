@@ -38,6 +38,19 @@ def r32_match_number(fifa_id: str | None) -> int | None:
         return None
 
 
+def knockout_slot_sort_key(fifa_id: str | None) -> tuple[int, int, str]:
+    """Orden numérico KO-R32-2 antes que KO-R32-10 (no alfabético)."""
+    if not fifa_id:
+        return (99, 9999, "")
+    for rank, prefix in enumerate(("KO-R32-", "KO-R16-", "KO-QF-", "KO-SF-", "KO-F-")):
+        if fifa_id.startswith(prefix):
+            try:
+                return (rank, int(fifa_id[len(prefix) :]), fifa_id)
+            except ValueError:
+                break
+    return (98, 9999, fifa_id)
+
+
 def pair_winners_r32_to_r16(
     matches: list, winner_fn,
 ) -> list[tuple[str, str]]:

@@ -3,7 +3,11 @@ from __future__ import annotations
 
 from types import SimpleNamespace
 
-from app.utils.bracket_paths import pair_winners_r32_to_r16, pair_winners_sequential
+from app.utils.bracket_paths import (
+    knockout_slot_sort_key,
+    pair_winners_r32_to_r16,
+    pair_winners_sequential,
+)
 
 
 def _m(fifa_id: str, winner: str):
@@ -42,3 +46,13 @@ def test_r32_to_r16_official_pairings():
 def test_sequential_pairing():
     winners = ["A", "B", "C", "D"]
     assert pair_winners_sequential(winners) == [("A", "B"), ("C", "D")]
+
+
+def test_knockout_slot_sort_key_numeric():
+    ids = ["KO-R32-10", "KO-R32-2", "KO-R32-1", "KO-R32-16"]
+    assert sorted(ids, key=knockout_slot_sort_key) == [
+        "KO-R32-1",
+        "KO-R32-2",
+        "KO-R32-10",
+        "KO-R32-16",
+    ]

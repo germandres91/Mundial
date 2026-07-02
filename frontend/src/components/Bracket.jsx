@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { flagUrl } from "../utils/flags";
 import { R32_TO_R16, pairByIndices, pairSequential } from "../utils/bracketPaths";
+import { sortKnockoutMatches } from "../utils/knockoutSort";
 
 const ROUNDS = [
   { key: "Dieciseisavos de final", title: "Dieciseisavos" },
@@ -79,7 +80,7 @@ function buildRounds(knockout) {
     (byPhase[k.fase] ||= []).push(k);
   }
   for (const phase of Object.keys(byPhase)) {
-    byPhase[phase].sort((a, b) => (a.fifa_id || "").localeCompare(b.fifa_id || ""));
+    byPhase[phase] = sortKnockoutMatches(byPhase[phase]);
   }
 
   const r32 = byPhase["Dieciseisavos de final"];

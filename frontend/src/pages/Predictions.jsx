@@ -5,6 +5,7 @@ import { SkeletonTable } from "../components/Skeleton";
 import { useAuth } from "../context/AuthContext";
 import { useToast } from "../context/ToastContext";
 import {
+  useBracket,
   useMatches,
   useMutationWithRefresh,
   useParticipants,
@@ -12,6 +13,7 @@ import {
 } from "../hooks/useApi";
 import { endpoints } from "../services/api";
 import { evaluatePrediction, scoringGoals } from "../utils/scoring";
+import { sortMatchesForTable } from "../utils/knockoutSort";
 
 export default function Predictions() {
   const toast = useToast();
@@ -19,6 +21,7 @@ export default function Predictions() {
   const { data: participants } = useParticipants();
   const [participantId, setParticipantId] = useState("");
   const { data: matches, isLoading } = useMatches();
+  const { data: bracket } = useBracket();
   const { data: predictions } = usePredictions({ participant_id: participantId || null });
   const [drafts, setDrafts] = useState({});
 
@@ -29,6 +32,34 @@ export default function Predictions() {
     (predictions || []).forEach((p) => (map[p.match_id] = p));
     return map;
   }, [predictions]);
+
+  const tableMatches = useMemo(() => {
+    const koById = new Map();
+    const koByFifa = new Map();
+    for (const m of bracket?.knockout || []) {
+      if (m.id != null) koById.set(m.id, m);
+      if (m.fifa_id) koByFifa.set(m.fifa_id, m);
+    }
+
+    const enriched = (matches || []).map((m) => {
+      const ko = koById.get(m.id) || koByFifa.get(m.fifa_id);
+      if (!ko) return m;
+      if (m.goles_local != null && m.goles_visitante != null) return m;
+      if (ko.goles_local == null || ko.goles_visitante == null) return m;
+      return {
+        ...m,
+        goles_local: ko.goles_local,
+        goles_visitante: ko.goles_visitante,
+        goles_local_90: ko.goles_local_90 ?? m.goles_local_90,
+        goles_visitante_90: ko.goles_visitante_90 ?? m.goles_visitante_90,
+        ganador: ko.ganador ?? m.ganador,
+        estado: ko.estado ?? m.estado,
+        minuto: ko.minuto ?? m.minuto,
+      };
+    });
+
+    return sortMatchesForTable(enriched);
+  }, [matches, bracket]);
 
   const save = useMutationWithRefresh(endpoints.createPrediction, {
     onSuccess: () => toast.success("Predicción guardada"),
@@ -122,7 +153,12 @@ export default function Predictions() {
             </div>
           );
         }
-        if (!hasScore) return <span className="text-slate-400">—</span>;
+        if (!hasScore) {
+          if (m.estado === "FINISHED") {
+            return <span className="text-amber-600 dark:text-amber-400">Pendiente de sincronizar</span>;
+          }
+          return <span className="text-slate-400">—</span>;
+        }
         const gl90 = m.goles_local_90;
         const gv90 = m.goles_visitante_90;
         const has90 = gl90 != null && gv90 != null;
@@ -250,7 +286,7 @@ export default function Predictions() {
       ) : (
         <DataTable
           columns={columns}
-          data={matches || []}
+          data={tableMatches}
           emptyMessage="No hay partidos disponibles."
         />
       )}

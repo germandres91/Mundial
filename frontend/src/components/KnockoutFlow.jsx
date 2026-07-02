@@ -1,3 +1,5 @@
+import { sortKnockoutMatches } from "../utils/knockoutSort";
+
 function Tie({ top, bottom, highlight, scoreTop, scoreBottom, live, minuto }) {
   const showScore = scoreTop != null && scoreBottom != null;
   return (
@@ -46,7 +48,7 @@ function byPhase(knockout) {
     (map[m.fase] ||= []).push(m);
   }
   for (const phase of Object.keys(map)) {
-    map[phase].sort((a, b) => (a.fifa_id || "").localeCompare(b.fifa_id || ""));
+    map[phase] = sortKnockoutMatches(map[phase]);
   }
   return map;
 }

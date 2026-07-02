@@ -24,7 +24,11 @@ from app.repositories.match_repository import MatchRepository
 
 from app.services.tournament_service import TournamentService
 
-from app.utils.bracket_paths import pair_winners_r32_to_r16, pair_winners_sequential
+from app.utils.bracket_paths import (
+    knockout_slot_sort_key,
+    pair_winners_r32_to_r16,
+    pair_winners_sequential,
+)
 
 
 
@@ -352,7 +356,7 @@ class KnockoutService:
 
             winners: list[str] = []
 
-            for m in sorted(current, key=lambda x: x.fifa_id or ""):
+            for m in sorted(current, key=lambda x: knockout_slot_sort_key(x.fifa_id)):
 
                 winner = m.classified_winner()
 
