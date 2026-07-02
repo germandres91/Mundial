@@ -63,7 +63,6 @@ class RegulationScoringService:
                 continue
             if match.goles_local_90 is not None and match.goles_visitante_90 is not None:
                 continue
-            # En grupos, el marcador final coincide con los 90 minutos.
             if match.fase == "Fase de grupos":
                 match.goles_local_90 = match.goles_local
                 match.goles_visitante_90 = match.goles_visitante

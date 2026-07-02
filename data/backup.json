@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "created_at": "2026-07-02T01:56:36.895786+00:00",
   "users": [
     {
@@ -25344,7 +25344,9 @@
       "goles_local": 0,
       "goles_visitante": 1,
       "estado": "FINISHED",
-      "fase": "Dieciseisavos de final"
+      "fase": "Dieciseisavos de final",
+      "goles_local_90": 0,
+      "goles_visitante_90": 1
     },
     {
       "fifa_id": "KO-R32-4",
@@ -25353,7 +25355,9 @@
       "goles_local": 2,
       "goles_visitante": 1,
       "estado": "FINISHED",
-      "fase": "Dieciseisavos de final"
+      "fase": "Dieciseisavos de final",
+      "goles_local_90": 2,
+      "goles_visitante_90": 1
     },
     {
       "fifa_id": "KO-R32-2",
@@ -25362,7 +25366,12 @@
       "goles_local": 1,
       "goles_visitante": 1,
       "estado": "FINISHED",
-      "fase": "Dieciseisavos de final"
+      "fase": "Dieciseisavos de final",
+      "goles_local_90": 1,
+      "goles_visitante_90": 1,
+      "penales_local": 3,
+      "penales_visitante": 4,
+      "ganador": "Paraguay"
     },
     {
       "fifa_id": "KO-R32-3",
@@ -25371,7 +25380,12 @@
       "goles_local": 1,
       "goles_visitante": 1,
       "estado": "FINISHED",
-      "fase": "Dieciseisavos de final"
+      "fase": "Dieciseisavos de final",
+      "goles_local_90": 1,
+      "goles_visitante_90": 1,
+      "penales_local": 2,
+      "penales_visitante": 3,
+      "ganador": "Marruecos"
     },
     {
       "fifa_id": "KO-R32-6",
@@ -25380,7 +25394,9 @@
       "goles_local": 1,
       "goles_visitante": 2,
       "estado": "FINISHED",
-      "fase": "Dieciseisavos de final"
+      "fase": "Dieciseisavos de final",
+      "goles_local_90": 1,
+      "goles_visitante_90": 2
     },
     {
       "fifa_id": "KO-R32-5",
@@ -25389,7 +25405,9 @@
       "goles_local": 3,
       "goles_visitante": 0,
       "estado": "FINISHED",
-      "fase": "Dieciseisavos de final"
+      "fase": "Dieciseisavos de final",
+      "goles_local_90": 3,
+      "goles_visitante_90": 0
     },
     {
       "fifa_id": "KO-R32-7",
@@ -25398,7 +25416,9 @@
       "goles_local": 2,
       "goles_visitante": 0,
       "estado": "FINISHED",
-      "fase": "Dieciseisavos de final"
+      "fase": "Dieciseisavos de final",
+      "goles_local_90": 2,
+      "goles_visitante_90": 0
     },
     {
       "fifa_id": "KO-R32-8",
@@ -25407,7 +25427,9 @@
       "goles_local": 2,
       "goles_visitante": 1,
       "estado": "FINISHED",
-      "fase": "Dieciseisavos de final"
+      "fase": "Dieciseisavos de final",
+      "goles_local_90": 2,
+      "goles_visitante_90": 1
     },
     {
       "fifa_id": "KO-R32-10",
@@ -25416,7 +25438,10 @@
       "goles_local": 3,
       "goles_visitante": 2,
       "estado": "FINISHED",
-      "fase": "Dieciseisavos de final"
+      "fase": "Dieciseisavos de final",
+      "goles_local_90": 2,
+      "goles_visitante_90": 2,
+      "ganador": "Bélgica"
     }
   ],
   "scores": [

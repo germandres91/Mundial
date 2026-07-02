@@ -122,14 +122,23 @@ export default function Predictions() {
           );
         }
         if (!hasScore) return <span className="text-slate-400">—</span>;
+        const gl90 = m.goles_local_90;
+        const gv90 = m.goles_visitante_90;
+        const has90 = gl90 != null && gv90 != null;
+        const diff90 = has90 && (gl90 !== m.goles_local || gv90 !== m.goles_visitante);
         return (
-          <span
-            className={`font-bold tabular-nums ${
-              isLive ? "text-rose-500" : "text-emerald-500"
-            }`}
-          >
-            {m.goles_local} - {m.goles_visitante}
-          </span>
+          <div className="tabular-nums">
+            <span
+              className={`font-bold ${isLive ? "text-rose-500" : "text-emerald-500"}`}
+            >
+              {m.goles_local} - {m.goles_visitante}
+            </span>
+            {diff90 && (
+              <p className="mt-0.5 text-[11px] font-medium text-amber-600 dark:text-amber-400">
+                Puntos (90&apos;): {gl90} - {gv90}
+              </p>
+            )}
+          </div>
         );
       },
     },

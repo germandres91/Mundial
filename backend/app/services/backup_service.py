@@ -262,9 +262,14 @@ class BackupService:
                 match.goles_local_90 = int(item["goles_local_90"])
             if item.get("goles_visitante_90") is not None:
                 match.goles_visitante_90 = int(item["goles_visitante_90"])
-            elif match.goles_local_90 is None:
+            elif match.fase == "Fase de grupos":
+                # En grupos el marcador final = 90 minutos.
                 match.goles_local_90 = match.goles_local
                 match.goles_visitante_90 = match.goles_visitante
+            else:
+                # Eliminatorias: no copiar marcador con TE/penales a los 90'.
+                match.goles_local_90 = None
+                match.goles_visitante_90 = None
             if item.get("penales_local") is not None:
                 match.penales_local = int(item["penales_local"])
             if item.get("penales_visitante") is not None:
@@ -400,4 +405,14 @@ class BackupService:
             except Exception:  # noqa: BLE001
                 logger.exception("No se pudieron crear partidos de eliminatorias al restaurar")
 
-        return self.restore_data(data)
+        summary = self.restore_data(data)
+        if summary is not None:
+            from app.services.ranking_service import RankingService
+            from app.services.regulation_scoring_service import RegulationScoringService
+            from app.services.scoring_service import ScoringService
+
+            summary["regulacion"] = RegulationScoringService(self.db).backfill_regulation_scores()
+            ScoringService(self.db).recalculate_all()
+            RankingService(self.db).recalculate()
+            self.db.commit()
+        return summary
