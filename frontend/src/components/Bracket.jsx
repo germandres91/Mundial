@@ -51,6 +51,27 @@ function projectNextRound(prevCards, phaseKey) {
   return pairSequential(prevCards);
 }
 
+function teamPairKey(a, b) {
+  if (!a || !b) return null;
+  return [a, b].sort().join("|");
+}
+
+function findDbMatch(card, dbMatches) {
+  const ka = card.a?.equipo;
+  const kb = card.b?.equipo;
+  if (!ka || !kb) return null;
+  const key = teamPairKey(ka, kb);
+  return dbMatches.find((m) => teamPairKey(m.local, m.visitante) === key);
+}
+
+function mergeProjectedWithDb(projected, dbMatches) {
+  return projected.map((proj) => {
+    const db = findDbMatch(proj, dbMatches);
+    if (db) return matchToCard(db);
+    return proj;
+  });
+}
+
 function buildRounds(knockout) {
   const byPhase = {};
   for (const k of knockout || []) {
@@ -61,23 +82,19 @@ function buildRounds(knockout) {
     byPhase[phase].sort((a, b) => (a.fifa_id || "").localeCompare(b.fifa_id || ""));
   }
 
-  const rounds = [];
-  let prevCards = null;
+  const r32 = byPhase["Dieciseisavos de final"];
+  if (!r32?.length) {
+    return ROUNDS.map(() => []);
+  }
 
-  for (const { key } of ROUNDS) {
-    const db = byPhase[key];
-    if (db?.length) {
-      const cards = db.map((m) => matchToCard(m));
-      rounds.push(cards);
-      prevCards = cards;
-    } else if (prevCards?.length) {
-      const cards = projectNextRound(prevCards, key);
-      rounds.push(cards);
-      prevCards = cards;
-    } else {
-      rounds.push([]);
-      prevCards = null;
-    }
+  let prevCards = r32.map((m) => matchToCard(m));
+  const rounds = [prevCards];
+
+  for (const { key } of ROUNDS.slice(1)) {
+    const projected = projectNextRound(prevCards, key);
+    const cards = mergeProjectedWithDb(projected, byPhase[key] || []);
+    rounds.push(cards);
+    prevCards = cards;
   }
 
   return rounds;

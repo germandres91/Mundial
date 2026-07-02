@@ -54,7 +54,13 @@ export default function Home() {
     return map;
   }, [predictions]);
 
-  const liveMatch = liveMatches?.[0];
+  const trackedLiveMatches = useMemo(() => {
+    const fromApi = liveMatches || [];
+    if (fromApi.length) return fromApi;
+    return knockout.filter((m) => m.estado === "LIVE");
+  }, [liveMatches, knockout]);
+
+  const liveMatch = trackedLiveMatches[0];
   const hasScore = (m) => m?.goles_local != null && m?.goles_visitante != null;
   const matchScore = (m) => (hasScore(m) ? `${m.goles_local} - ${m.goles_visitante}` : "vs");
 
@@ -142,33 +148,41 @@ export default function Home() {
         </div>
       )}
 
-      {liveMatches?.length > 0 && (
-        <section className="space-y-3">
-          <div className="flex flex-wrap items-end justify-between gap-3">
-            <h2 className="text-xl font-bold">Partidos en vivo 🔴</h2>
-            <div className="flex min-w-[220px] flex-1 flex-col gap-1 sm:max-w-xs">
-              <label className="text-xs font-medium text-slate-500">
-                Ver pronóstico de
-              </label>
-              <select
-                className="input py-2 text-sm"
-                value={participantId}
-                onChange={(e) => setParticipantId(e.target.value)}
-              >
-                <option value="">Selecciona un participante…</option>
-                {(participants || []).map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.nombre}
-                  </option>
-                ))}
-              </select>
-            </div>
+      <section className="space-y-3">
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h2 className="text-xl font-bold">
+              {trackedLiveMatches.length > 0 ? "Partidos en vivo 🔴" : "Pronósticos en partidos"}
+            </h2>
+            <p className="mt-0.5 text-sm text-slate-500">
+              Elige un participante para ver su pronóstico en los partidos en juego.
+            </p>
+          </div>
+          <div className="flex min-w-[220px] flex-1 flex-col gap-1 sm:max-w-xs">
+            <label className="text-xs font-medium text-slate-500">Ver pronóstico de</label>
+            <select
+              className="input py-2 text-sm"
+              value={participantId}
+              onChange={(e) => setParticipantId(e.target.value)}
+            >
+              <option value="">Selecciona un participante…</option>
+              {(participants || []).map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.nombre}
+                </option>
+              ))}
+            </select>
+          </div>
+          {trackedLiveMatches.length > 0 && (
             <span className="badge bg-rose-500/15 text-rose-400">
               Se actualiza automáticamente
             </span>
-          </div>
+          )}
+        </div>
+
+        {trackedLiveMatches.length > 0 ? (
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {liveMatches.map((m) => (
+            {trackedLiveMatches.map((m) => (
               <LiveMatchCard
                 key={m.id}
                 match={m}
@@ -177,8 +191,14 @@ export default function Home() {
               />
             ))}
           </div>
-        </section>
-      )}
+        ) : (
+          <div className="card text-sm text-slate-500">
+            {participantId
+              ? "No hay partidos en vivo ahora. Cuando empiece uno, verás aquí el marcador y el pronóstico del participante seleccionado."
+              : "No hay partidos en vivo. Selecciona un participante arriba para consultar sus pronósticos cuando haya partidos en juego."}
+          </div>
+        )}
+      </section>
 
       <section className="space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-2">

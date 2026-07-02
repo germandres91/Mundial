@@ -10,6 +10,7 @@ import {
   useParticipants,
   usePredictions,
 } from "../hooks/useApi";
+import { endpoints } from "../services/api";
 import { evaluatePrediction, scoringGoals } from "../utils/scoring";
 
 export default function Predictions() {
