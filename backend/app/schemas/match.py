@@ -34,6 +34,11 @@ class MatchUpdate(BaseModel):
 class MatchResult(BaseModel):
     goles_local: int = Field(ge=0)
     goles_visitante: int = Field(ge=0)
+    goles_local_90: int | None = Field(default=None, ge=0)
+    goles_visitante_90: int | None = Field(default=None, ge=0)
+    penales_local: int | None = Field(default=None, ge=0)
+    penales_visitante: int | None = Field(default=None, ge=0)
+    ganador: str | None = None
     estado: MatchStatus = MatchStatus.FINISHED
 
 
@@ -43,6 +48,11 @@ class MatchOut(MatchBase):
     id: int
     goles_local: int | None = None
     goles_visitante: int | None = None
+    goles_local_90: int | None = None
+    goles_visitante_90: int | None = None
+    penales_local: int | None = None
+    penales_visitante: int | None = None
+    ganador: str | None = None
     estado: MatchStatus
     minuto: str | None = None
 

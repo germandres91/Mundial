@@ -1,10 +1,17 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import Bracket from "../components/Bracket";
 import KnockoutFlow from "../components/KnockoutFlow";
 import LiveMatchCard from "../components/LiveMatchCard";
 import StatCard from "../components/StatCard";
 import { Skeleton } from "../components/Skeleton";
-import { useBracket, useDashboard, useMatches, useRanking } from "../hooks/useApi";
+import {
+  useBracket,
+  useDashboard,
+  useMatches,
+  useParticipants,
+  usePredictions,
+  useRanking,
+} from "../hooks/useApi";
 import { formatColombia } from "../utils/dates";
 
 const KO_PHASES = [
@@ -27,6 +34,25 @@ export default function Home() {
   const { data: bracket } = useBracket();
   const { data: liveMatches } = useMatches({ estado: "LIVE" });
   const { data: ranking } = useRanking();
+  const { data: participants } = useParticipants();
+  const [participantId, setParticipantId] = useState("");
+
+  const selectedParticipant = (participants || []).find(
+    (p) => String(p.id) === participantId
+  );
+
+  const { data: predictions } = usePredictions({
+    participant_id: participantId ? Number(participantId) : null,
+  });
+
+  const predictionByMatchId = useMemo(() => {
+    const map = new Map();
+    for (const p of predictions || []) {
+      const mid = p.match_id ?? p.match?.id;
+      if (mid != null) map.set(mid, p);
+    }
+    return map;
+  }, [predictions]);
 
   const liveMatch = liveMatches?.[0];
   const hasScore = (m) => m?.goles_local != null && m?.goles_visitante != null;
@@ -118,15 +144,37 @@ export default function Home() {
 
       {liveMatches?.length > 0 && (
         <section className="space-y-3">
-          <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex flex-wrap items-end justify-between gap-3">
             <h2 className="text-xl font-bold">Partidos en vivo 🔴</h2>
+            <div className="flex min-w-[220px] flex-1 flex-col gap-1 sm:max-w-xs">
+              <label className="text-xs font-medium text-slate-500">
+                Ver pronóstico de
+              </label>
+              <select
+                className="input py-2 text-sm"
+                value={participantId}
+                onChange={(e) => setParticipantId(e.target.value)}
+              >
+                <option value="">Selecciona un participante…</option>
+                {(participants || []).map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.nombre}
+                  </option>
+                ))}
+              </select>
+            </div>
             <span className="badge bg-rose-500/15 text-rose-400">
               Se actualiza automáticamente
             </span>
           </div>
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {liveMatches.map((m) => (
-              <LiveMatchCard key={m.id} match={m} />
+              <LiveMatchCard
+                key={m.id}
+                match={m}
+                prediction={predictionByMatchId.get(m.id)}
+                participantName={selectedParticipant?.nombre}
+              />
             ))}
           </div>
         </section>

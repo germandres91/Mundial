@@ -30,7 +30,7 @@ from app.utils.teams import team_code
 
 logger = get_logger(__name__)
 
-BACKUP_VERSION = 1
+BACKUP_VERSION = 2
 DEFAULT_BACKUP_PATH = "data/backup.json"
 
 
@@ -110,6 +110,11 @@ class BackupService:
                         "visitante": m.visitante,
                         "goles_local": m.goles_local,
                         "goles_visitante": m.goles_visitante,
+                        "goles_local_90": m.goles_local_90,
+                        "goles_visitante_90": m.goles_visitante_90,
+                        "penales_local": m.penales_local,
+                        "penales_visitante": m.penales_visitante,
+                        "ganador": m.ganador,
                         "estado": m.estado.value,
                         "fase": m.fase,
                     }
@@ -253,6 +258,19 @@ class BackupService:
                 continue
             match.goles_local = int(item.get("goles_local", 0))
             match.goles_visitante = int(item.get("goles_visitante", 0))
+            if item.get("goles_local_90") is not None:
+                match.goles_local_90 = int(item["goles_local_90"])
+            if item.get("goles_visitante_90") is not None:
+                match.goles_visitante_90 = int(item["goles_visitante_90"])
+            elif match.goles_local_90 is None:
+                match.goles_local_90 = match.goles_local
+                match.goles_visitante_90 = match.goles_visitante
+            if item.get("penales_local") is not None:
+                match.penales_local = int(item["penales_local"])
+            if item.get("penales_visitante") is not None:
+                match.penales_visitante = int(item["penales_visitante"])
+            if item.get("ganador"):
+                match.ganador = str(item["ganador"])
             try:
                 match.estado = MatchStatus(item.get("estado", MatchStatus.FINISHED.value))
             except ValueError:

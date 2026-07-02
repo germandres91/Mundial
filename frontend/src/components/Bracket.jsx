@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { flagUrl } from "../utils/flags";
+import { R32_TO_R16, pairByIndices, pairSequential } from "../utils/bracketPaths";
 
 const ROUNDS = [
   { key: "Dieciseisavos de final", title: "Dieciseisavos" },
@@ -21,8 +22,13 @@ function matchToCard(k, { projected = false } = {}) {
 
   let winner = null;
   if (finished && hasScore) {
-    if (k.goles_local > k.goles_visitante) winner = toTeam(k.local);
-    else if (k.goles_visitante > k.goles_local) winner = toTeam(k.visitante);
+    if (k.ganador) {
+      winner = toTeam(k.ganador);
+    } else if (k.goles_local > k.goles_visitante) {
+      winner = toTeam(k.local);
+    } else if (k.goles_visitante > k.goles_local) {
+      winner = toTeam(k.visitante);
+    }
   }
 
   return {
@@ -38,22 +44,11 @@ function matchToCard(k, { projected = false } = {}) {
   };
 }
 
-function projectNextRound(prevCards) {
-  const pairs = [];
-  for (let i = 0; i < prevCards.length; i += 2) {
-    pairs.push({
-      key: `proj-${i / 2}`,
-      a: prevCards[i]?.winner || null,
-      b: prevCards[i + 1]?.winner || null,
-      scoreA: null,
-      scoreB: null,
-      winner: null,
-      live: false,
-      minuto: null,
-      projected: true,
-    });
+function projectNextRound(prevCards, phaseKey) {
+  if (phaseKey === "Octavos de final") {
+    return pairByIndices(prevCards, R32_TO_R16);
   }
-  return pairs;
+  return pairSequential(prevCards);
 }
 
 function buildRounds(knockout) {
@@ -76,7 +71,7 @@ function buildRounds(knockout) {
       rounds.push(cards);
       prevCards = cards;
     } else if (prevCards?.length) {
-      const cards = projectNextRound(prevCards);
+      const cards = projectNextRound(prevCards, key);
       rounds.push(cards);
       prevCards = cards;
     } else {

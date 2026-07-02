@@ -115,7 +115,10 @@ class ScoringService:
 
         Devuelve el número de predicciones evaluadas.
         """
-        if not match.is_finished or match.goles_local is None or match.goles_visitante is None:
+        if not match.is_finished:
+            return 0
+        real_local, real_visitante = match.scoring_goals()
+        if real_local is None or real_visitante is None:
             return 0
 
         points = self._points_map()
@@ -124,8 +127,8 @@ class ScoringService:
             result = self.evaluate(
                 pred.pred_local,
                 pred.pred_visitante,
-                match.goles_local,
-                match.goles_visitante,
+                real_local,
+                real_visitante,
                 points,
             )
             self.scores.upsert(
@@ -150,14 +153,15 @@ class ScoringService:
         points = self._points_map()
         acc: dict[int, int] = {}
         for match in self.matches.list(estado=MatchStatus.LIVE):
-            if match.goles_local is None or match.goles_visitante is None:
+            real_local, real_visitante = match.live_scoring_goals()
+            if real_local is None or real_visitante is None:
                 continue
             for pred in self.predictions.list_for_match(match.id):
                 result = self.evaluate(
                     pred.pred_local,
                     pred.pred_visitante,
-                    match.goles_local,
-                    match.goles_visitante,
+                    real_local,
+                    real_visitante,
                     points,
                 )
                 if result.puntos:

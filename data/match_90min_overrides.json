@@ -1,0 +1,36 @@
+{
+  "notas": "Correcciones oficiales de marcador a los 90 minutos para puntuación. goles_local/goles_visitante = marcador final oficial (TE/penales). ganador = equipo clasificado.",
+  "partidos": {
+    "KO-R32-2": {
+      "local": "Alemania",
+      "visitante": "Paraguay",
+      "goles_local_90": 1,
+      "goles_visitante_90": 1,
+      "goles_local": 1,
+      "goles_visitante": 1,
+      "penales_local": 3,
+      "penales_visitante": 4,
+      "ganador": "Paraguay"
+    },
+    "KO-R32-3": {
+      "local": "Países Bajos",
+      "visitante": "Marruecos",
+      "goles_local_90": 1,
+      "goles_visitante_90": 1,
+      "goles_local": 1,
+      "goles_visitante": 1,
+      "penales_local": 2,
+      "penales_visitante": 3,
+      "ganador": "Marruecos"
+    },
+    "KO-R32-10": {
+      "local": "Bélgica",
+      "visitante": "Senegal",
+      "goles_local_90": 2,
+      "goles_visitante_90": 2,
+      "goles_local": 3,
+      "goles_visitante": 2,
+      "ganador": "Bélgica"
+    }
+  }
+}

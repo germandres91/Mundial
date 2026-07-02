@@ -59,8 +59,24 @@ class APIFootballProvider(BaseFootballProvider):
         fixture = item.get("fixture", {})
         teams = item.get("teams", {})
         goals = item.get("goals", {})
+        score = item.get("score", {})
+        fulltime = score.get("fulltime", {})
+        penalty = score.get("penalty", {})
         league = item.get("league", {})
         ts = fixture.get("date")
+        status_short = fixture.get("status", {}).get("short", "")
+
+        gl90 = fulltime.get("home")
+        gv90 = fulltime.get("away")
+        gl_final = goals.get("home")
+        gv_final = goals.get("away")
+
+        ganador = None
+        if teams.get("home", {}).get("winner"):
+            ganador = teams.get("home", {}).get("name")
+        elif teams.get("away", {}).get("winner"):
+            ganador = teams.get("away", {}).get("name")
+
         return ProviderMatch(
             fifa_id=str(fixture.get("id")),
             local=teams.get("home", {}).get("name", "?"),
@@ -68,7 +84,12 @@ class APIFootballProvider(BaseFootballProvider):
             fecha=datetime.fromisoformat(ts.replace("Z", "+00:00")) if ts else None,
             grupo=league.get("round"),
             fase=league.get("round"),
-            goles_local=goals.get("home"),
-            goles_visitante=goals.get("away"),
-            estado=cls._map_status(fixture.get("status", {}).get("short", "")),
+            goles_local=gl_final,
+            goles_visitante=gv_final,
+            goles_local_90=gl90,
+            goles_visitante_90=gv90,
+            penales_local=penalty.get("home"),
+            penales_visitante=penalty.get("away"),
+            ganador=ganador,
+            estado=cls._map_status(status_short),
         )

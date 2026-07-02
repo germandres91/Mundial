@@ -55,6 +55,7 @@ function winnerName(m) {
   if (m.estado !== "FINISHED" || m.goles_local == null || m.goles_visitante == null) {
     return null;
   }
+  if (m.ganador) return m.ganador;
   if (m.goles_local > m.goles_visitante) return m.local;
   if (m.goles_visitante > m.goles_local) return m.visitante;
   return null;

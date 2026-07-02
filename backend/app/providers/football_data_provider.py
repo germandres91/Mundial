@@ -78,7 +78,26 @@ class FootballDataProvider(BaseFootballProvider):
 
     @staticmethod
     def _parse(item: dict) -> ProviderMatch:
-        score = item.get("score", {}).get("fullTime", {})
+        score_block = item.get("score", {})
+        fulltime = score_block.get("fullTime", {})
+        extratime = score_block.get("extraTime", {}) or {}
+        penalties = score_block.get("penalties", {}) or {}
+
+        gl90 = fulltime.get("home")
+        gv90 = fulltime.get("away")
+        gl_final = gl90
+        gv_final = gv90
+        if extratime.get("home") is not None and gl90 is not None:
+            gl_final = gl90 + extratime.get("home", 0)
+            gv_final = gv90 + extratime.get("away", 0)
+
+        winner_side = score_block.get("winner")
+        ganador = None
+        if winner_side == "HOME_TEAM":
+            ganador = item.get("homeTeam", {}).get("name")
+        elif winner_side == "AWAY_TEAM":
+            ganador = item.get("awayTeam", {}).get("name")
+
         utc = item.get("utcDate")
         stage = item.get("stage") or ""
         fase = "Fase de grupos" if stage == "GROUP_STAGE" else stage.replace("_", " ").title()
@@ -89,7 +108,12 @@ class FootballDataProvider(BaseFootballProvider):
             fecha=datetime.fromisoformat(utc.replace("Z", "+00:00")) if utc else None,
             grupo=FootballDataProvider._parse_group(item.get("group")),
             fase=fase,
-            goles_local=score.get("home"),
-            goles_visitante=score.get("away"),
+            goles_local=gl_final,
+            goles_visitante=gv_final,
+            goles_local_90=gl90,
+            goles_visitante_90=gv90,
+            penales_local=penalties.get("home"),
+            penales_visitante=penalties.get("away"),
+            ganador=ganador,
             estado=_STATUS_MAP.get(item.get("status", ""), MatchStatus.SCHEDULED),
         )

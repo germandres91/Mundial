@@ -1,0 +1,14 @@
+{
+  "notas": "Rutas oficiales del cuadro FIFA Mundial 2026. Los números son el índice del partido KO-R32-N (1-16). Octavos en adelante usan índices 0-based dentro de la ronda anterior.",
+  "r32_to_r16": [
+    [1, 3],
+    [2, 5],
+    [4, 6],
+    [7, 8],
+    [9, 10],
+    [11, 12],
+    [13, 15],
+    [14, 16]
+  ],
+  "sequential_from_r16": true
+}

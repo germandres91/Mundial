@@ -41,7 +41,14 @@ def get_db() -> Generator[Session, None, None]:
 # create_all (que no altera tablas existentes), las añadimos aquí de forma
 # idempotente para no perder datos ni requerir migraciones manuales.
 _COLUMN_UPGRADES: dict[str, dict[str, str]] = {
-    "matches": {"minuto": "VARCHAR(16)"},
+    "matches": {
+        "minuto": "VARCHAR(16)",
+        "goles_local_90": "INTEGER",
+        "goles_visitante_90": "INTEGER",
+        "penales_local": "INTEGER",
+        "penales_visitante": "INTEGER",
+        "ganador": "VARCHAR(80)",
+    },
     "predictions": {"locked_at": "TIMESTAMP WITH TIME ZONE"},
 }
 

@@ -114,27 +114,46 @@ class SyncService:
 
     @staticmethod
     def _apply_result(match: Match, pm: ProviderMatch) -> None:
-        """Vuelca el marcador/estado de la API en el partido propio.
-
-        Ajusta la orientación si el equipo local de la API es el visitante
-        nuestro (o viceversa).
-        """
-        gl, gv = pm.goles_local, pm.goles_visitante
+        """Vuelca marcador/estado de la API en el partido propio."""
         same_orientation = team_code(match.local) == team_code(pm.local)
-        if not same_orientation:
-            gl, gv = gv, gl
+
+        def orient(local_val, visitante_val):
+            if local_val is None and visitante_val is None:
+                return None, None
+            if same_orientation:
+                return local_val, visitante_val
+            return visitante_val, local_val
+
+        gl, gv = orient(pm.goles_local, pm.goles_visitante)
+        gl90, gv90 = orient(pm.goles_local_90, pm.goles_visitante_90)
+        pl, pv = orient(pm.penales_local, pm.penales_visitante)
+
         if gl is not None:
             match.goles_local = gl
         if gv is not None:
             match.goles_visitante = gv
+        if gl90 is not None:
+            match.goles_local_90 = gl90
+        if gv90 is not None:
+            match.goles_visitante_90 = gv90
+        if pl is not None:
+            match.penales_local = pl
+        if pv is not None:
+            match.penales_visitante = pv
+        if pm.ganador:
+            code = team_code(pm.ganador)
+            if code and code == team_code(match.local):
+                match.ganador = match.local
+            elif code and code == team_code(match.visitante):
+                match.ganador = match.visitante
+            else:
+                match.ganador = pm.ganador
+
         if pm.fecha:
             match.fecha = pm.fecha
-        # No permitir que el estado retroceda (p. ej. una lectura "vacía" que
-        # reporte SCHEDULED no debe revertir un partido ya FINISHED/LIVE).
         new_status = SyncService._resolve_status(pm)
         if _STATUS_RANK.get(new_status, 0) >= _STATUS_RANK.get(match.estado, 0):
             match.estado = new_status
-        # El minuto solo aplica en vivo; se limpia al finalizar/programar.
         if match.estado == MatchStatus.LIVE:
             if pm.minuto:
                 match.minuto = pm.minuto
@@ -188,6 +207,16 @@ class SyncService:
             base.goles_local = new.goles_local
         if new.goles_visitante is not None:
             base.goles_visitante = new.goles_visitante
+        if new.goles_local_90 is not None:
+            base.goles_local_90 = new.goles_local_90
+        if new.goles_visitante_90 is not None:
+            base.goles_visitante_90 = new.goles_visitante_90
+        if new.penales_local is not None:
+            base.penales_local = new.penales_local
+        if new.penales_visitante is not None:
+            base.penales_visitante = new.penales_visitante
+        if new.ganador:
+            base.ganador = new.ganador
         base.fecha = new.fecha or base.fecha
         base.grupo = base.grupo or new.grupo
         base.fase = base.fase or new.fase
@@ -267,11 +296,13 @@ class SyncService:
                 self._apply_result(match, pm)
 
             updated += 1
-            if match.estado == MatchStatus.FINISHED and match.goles_local is not None:
-                self.db.flush()
-                scoring.score_match(match)
-                if not was_finished:
-                    newly_finished += 1
+            if match.estado == MatchStatus.FINISHED:
+                real_local, real_visitante = match.scoring_goals()
+                if real_local is not None and real_visitante is not None:
+                    self.db.flush()
+                    scoring.score_match(match)
+                    if not was_finished:
+                        newly_finished += 1
 
         live_marked = self._mark_live_by_schedule()
         self.db.commit()

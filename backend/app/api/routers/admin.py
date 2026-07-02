@@ -29,6 +29,7 @@ from app.services.prediction_submission_service import (
     PredictionSubmissionError,
     PredictionSubmissionService,
 )
+from app.services.regulation_scoring_service import RegulationScoringService
 from app.services.ranking_service import RankingService
 from app.services.scoring_service import ScoringService
 from app.services.sync_service import SyncService
@@ -277,10 +278,18 @@ def create_backup(db: Session = Depends(get_db)) -> dict:
     return BackupService(db).write_backup()
 
 
+@router.post("/scoring/recalculate-90min")
+def recalculate_90min_scoring(db: Session = Depends(get_db)) -> dict:
+    """Backup automático + recálculo de puntajes usando solo marcadores de 90 minutos."""
+    return RegulationScoringService(db).recalculate_all(create_backup=True)
+
+
 def _finalize_backup_restore(db: Session) -> None:
     """Tras restaurar: enlaza cuentas, sincroniza admin y recalcula ranking."""
     AuthService(db).link_users_to_participants()
     AuthService(db).ensure_first_admin(sync_password=True)
+    db.commit()
+    RegulationScoringService(db).backfill_regulation_scores()
     db.commit()
     RankingService(db).recalculate()
 

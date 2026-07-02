@@ -24,6 +24,8 @@ from app.repositories.match_repository import MatchRepository
 
 from app.services.tournament_service import TournamentService
 
+from app.utils.bracket_paths import pair_winners_r32_to_r16, pair_winners_sequential
+
 
 
 logger = get_logger(__name__)
@@ -336,15 +338,31 @@ class KnockoutService:
 
 
 
-        winners: list[str] = []
+        if from_fase == FASE_R32:
 
-        for m in sorted(current, key=lambda x: x.fifa_id or ""):
+            try:
 
-            if m.goles_local is None or m.goles_visitante is None:
+                pairs = pair_winners_r32_to_r16(current, lambda m: m.classified_winner())
 
-                raise ValueError(f"Partido sin marcador: {m.fifa_id}")
+            except ValueError as exc:
 
-            winners.append(m.local if m.goles_local > m.goles_visitante else m.visitante)
+                raise ValueError(str(exc)) from exc
+
+        else:
+
+            winners: list[str] = []
+
+            for m in sorted(current, key=lambda x: x.fifa_id or ""):
+
+                winner = m.classified_winner()
+
+                if winner is None:
+
+                    raise ValueError(f"Partido sin ganador clasificado: {m.fifa_id}")
+
+                winners.append(winner)
+
+            pairs = pair_winners_sequential(winners)
 
 
 
@@ -352,15 +370,9 @@ class KnockoutService:
 
         created = 0
 
-        for i in range(0, len(winners), 2):
+        for i, (local, visitante) in enumerate(pairs, start=1):
 
-            if i + 1 >= len(winners):
-
-                break
-
-            n = i // 2 + 1
-
-            fifa_id = f"{prefix}-{n}"
+            fifa_id = f"{prefix}-{i}"
 
             self.matches.create(
 
@@ -370,11 +382,11 @@ class KnockoutService:
 
                 fase=next_fase,
 
-                local=winners[i],
+                local=local,
 
-                visitante=winners[i + 1],
+                visitante=visitante,
 
-                fecha=base + timedelta(hours=4 * n),
+                fecha=base + timedelta(hours=4 * i),
 
                 estado=MatchStatus.SCHEDULED,
 

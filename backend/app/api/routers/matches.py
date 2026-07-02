@@ -59,6 +59,19 @@ def set_result(match_id: int, payload: MatchResult, db: Session = Depends(get_db
         raise HTTPException(status_code=404, detail="Partido no encontrado")
     match.goles_local = payload.goles_local
     match.goles_visitante = payload.goles_visitante
+    match.goles_local_90 = (
+        payload.goles_local_90
+        if payload.goles_local_90 is not None
+        else payload.goles_local
+    )
+    match.goles_visitante_90 = (
+        payload.goles_visitante_90
+        if payload.goles_visitante_90 is not None
+        else payload.goles_visitante
+    )
+    match.penales_local = payload.penales_local
+    match.penales_visitante = payload.penales_visitante
+    match.ganador = payload.ganador
     match.estado = payload.estado
     db.flush()
 

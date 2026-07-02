@@ -78,6 +78,16 @@ def test_espn_scheduled_match_has_no_score():
     assert pm.goles_visitante is None
 
 
+def test_espn_parse_final_aet_status():
+    pm = ESPNProvider._parse(_espn_event("post", "STATUS_FINAL_AET", "3", "2"))
+    assert pm.estado == MatchStatus.FINISHED
+
+
+def test_espn_parse_final_pen_status():
+    pm = ESPNProvider._parse(_espn_event("post", "STATUS_FINAL_PEN", "1", "1"))
+    assert pm.estado == MatchStatus.FINISHED
+
+
 def test_espn_unknown_status_falls_back_to_state():
     pm = ESPNProvider._parse(_espn_event("post", "STATUS_WEIRD_NEW", "3", "1"))
     assert pm.estado == MatchStatus.FINISHED
