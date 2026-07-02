@@ -54,6 +54,8 @@ export default function Home() {
     return map;
   }, [predictions]);
 
+  const knockout = bracket?.knockout || [];
+
   const trackedLiveMatches = useMemo(() => {
     const fromApi = liveMatches || [];
     if (fromApi.length) return fromApi;
@@ -63,8 +65,6 @@ export default function Home() {
   const liveMatch = trackedLiveMatches[0];
   const hasScore = (m) => m?.goles_local != null && m?.goles_visitante != null;
   const matchScore = (m) => (hasScore(m) ? `${m.goles_local} - ${m.goles_visitante}` : "vs");
-
-  const knockout = bracket?.knockout || [];
 
   const koSummary = useMemo(() => {
     const finished = knockout.filter((m) => m.estado === "FINISHED").length;
