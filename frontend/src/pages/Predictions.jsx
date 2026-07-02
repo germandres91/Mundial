@@ -104,6 +104,17 @@ export default function Predictions() {
   const setResultDraft = (matchId, side, value) =>
     setResultDrafts((d) => ({ ...d, [matchId]: { ...d[matchId], [side]: value } }));
 
+  const renderAciertoBadges = (acierto) => (
+    <>
+      {acierto === "exacto" && (
+        <span className="badge bg-emerald-500/15 text-emerald-500">Exacto</span>
+      )}
+      {acierto === "parcial" && (
+        <span className="badge bg-amber-500/15 text-amber-500">Acierto</span>
+      )}
+    </>
+  );
+
   const columns = [
     {
       key: "match",
@@ -189,45 +200,42 @@ export default function Predictions() {
           existing && scoringGoals(m)
             ? evaluatePrediction(existing.pred_local, existing.pred_visitante, m)
             : null;
-        if (!isAdmin) {
-          return existing ? (
+
+        if (isAdmin && m.estado === "SCHEDULED") {
+          return (
+            <div className="flex flex-wrap items-center gap-2">
+              <input
+                type="number"
+                min="0"
+                className="input w-16 text-center"
+                defaultValue={existing?.pred_local}
+                onChange={(e) => setDraft(m.id, "local", e.target.value)}
+              />
+              <span className="text-slate-500">-</span>
+              <input
+                type="number"
+                min="0"
+                className="input w-16 text-center"
+                defaultValue={existing?.pred_visitante}
+                onChange={(e) => setDraft(m.id, "visitante", e.target.value)}
+              />
+              {renderAciertoBadges(acierto)}
+            </div>
+          );
+        }
+
+        if (existing) {
+          return (
             <span className="flex items-center gap-2">
               <span className="font-semibold tabular-nums">
                 {existing.pred_local} - {existing.pred_visitante}
               </span>
-              {acierto === "exacto" && (
-                <span className="badge bg-emerald-500/15 text-emerald-500">Exacto</span>
-              )}
-              {acierto === "parcial" && (
-                <span className="badge bg-amber-500/15 text-amber-500">Acierto</span>
-              )}
+              {renderAciertoBadges(acierto)}
             </span>
-          ) : (
-            <span className="text-slate-400">—</span>
           );
         }
-        const disabled = m.estado !== "SCHEDULED";
-        return (
-          <div className="flex items-center gap-2">
-            <input
-              type="number"
-              min="0"
-              disabled={disabled}
-              className="input w-16 text-center"
-              defaultValue={existing?.pred_local}
-              onChange={(e) => setDraft(m.id, "local", e.target.value)}
-            />
-            <span className="text-slate-500">-</span>
-            <input
-              type="number"
-              min="0"
-              disabled={disabled}
-              className="input w-16 text-center"
-              defaultValue={existing?.pred_visitante}
-              onChange={(e) => setDraft(m.id, "visitante", e.target.value)}
-            />
-          </div>
-        );
+
+        return <span className="text-slate-400">—</span>;
       },
     },
     ...(isAdmin
