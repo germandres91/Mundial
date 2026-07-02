@@ -10,7 +10,7 @@ import {
   useParticipants,
   usePredictions,
 } from "../hooks/useApi";
-import { endpoints } from "../services/api";
+import { evaluatePrediction, scoringGoals } from "../utils/scoring";
 
 export default function Predictions() {
   const toast = useToast();
@@ -126,6 +126,7 @@ export default function Predictions() {
         const gv90 = m.goles_visitante_90;
         const has90 = gl90 != null && gv90 != null;
         const diff90 = has90 && (gl90 !== m.goles_local || gv90 !== m.goles_visitante);
+        const forPoints = scoringGoals(m);
         return (
           <div className="tabular-nums">
             <span
@@ -133,9 +134,9 @@ export default function Predictions() {
             >
               {m.goles_local} - {m.goles_visitante}
             </span>
-            {diff90 && (
+            {diff90 && forPoints && (
               <p className="mt-0.5 text-[11px] font-medium text-amber-600 dark:text-amber-400">
-                Puntos (90&apos;): {gl90} - {gv90}
+                Puntos (90&apos;): {forPoints.local} - {forPoints.visitante}
               </p>
             )}
           </div>
@@ -147,16 +148,9 @@ export default function Predictions() {
       header: "Predicción",
       render: (m) => {
         const existing = predMap[m.id];
-        const hasScore = m.goles_local != null && m.goles_visitante != null;
         const acierto =
-          existing && hasScore
-            ? existing.pred_local === m.goles_local &&
-              existing.pred_visitante === m.goles_visitante
-              ? "exacto"
-              : Math.sign(existing.pred_local - existing.pred_visitante) ===
-                Math.sign(m.goles_local - m.goles_visitante)
-              ? "parcial"
-              : "fallo"
+          existing && scoringGoals(m)
+            ? evaluatePrediction(existing.pred_local, existing.pred_visitante, m)
             : null;
         if (!isAdmin) {
           return existing ? (
