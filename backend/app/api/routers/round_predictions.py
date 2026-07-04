@@ -31,9 +31,9 @@ def _handle_error(exc: PredictionSubmissionError) -> HTTPException:
 def my_knockout_matches(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
-) -> list:
-    """Partidos de eliminatorias y estado de predicción del usuario."""
-    return PredictionSubmissionService(db).open_matches_for(user)
+) -> dict:
+    """Partidos de eliminatorias, fase activa y estado de predicción del usuario."""
+    return PredictionSubmissionService(db).open_matches_payload(user)
 
 
 @router.post("/submit")

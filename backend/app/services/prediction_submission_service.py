@@ -15,7 +15,7 @@ from sqlalchemy.orm import Session
 from app.core.logging import get_logger
 
 from app.models.late_prediction_request import LatePredictionStatus
-
+from app.models.match import MatchStatus
 from app.models.user import User, UserRole
 
 from app.repositories.late_prediction_repository import LatePredictionRepository
@@ -106,10 +106,29 @@ class PredictionSubmissionService:
 
 
     @staticmethod
-
     def _can_submit(pred) -> bool:
-
         return pred is None or pred.locked_at is None
+
+    @staticmethod
+    def _can_submit_match(match, pred) -> bool:
+        if pred is not None and pred.locked_at is not None:
+            return False
+        return match.estado in (
+            MatchStatus.SCHEDULED,
+            MatchStatus.LIVE,
+            MatchStatus.FINISHED,
+        )
+
+    def active_submission_phase(self) -> str | None:
+        """Ronda más avanzada con partidos aún programados (abierta a predicciones)."""
+        active: str | None = None
+        for fase in KNOCKOUT_FASES:
+            ms = self.matches.list(fase=fase)
+            if not ms:
+                continue
+            if any(m.estado == MatchStatus.SCHEDULED for m in ms):
+                active = fase
+        return active
 
 
 
@@ -161,11 +180,31 @@ class PredictionSubmissionService:
 
             )
 
+        if not self._can_submit_match(match, existing):
 
+            raise PredictionSubmissionError(
+
+                "Este partido ya no acepta predicciones",
+
+                "closed",
+
+            )
 
         now = datetime.now(timezone.utc)
 
-        pred = self.predictions.create_locked(pid, match_id, pred_local, pred_visitante, now)
+        if existing is not None:
+
+            existing.pred_local = pred_local
+
+            existing.pred_visitante = pred_visitante
+
+            existing.locked_at = now
+
+            pred = existing
+
+        else:
+
+            pred = self.predictions.create_locked(pid, match_id, pred_local, pred_visitante, now)
 
         self.db.commit()
 
@@ -274,8 +313,11 @@ class PredictionSubmissionService:
 
 
     def open_matches_for(self, user: User, participant_id: int | None = None) -> list[dict]:
+        return self.open_matches_payload(user, participant_id)["matches"]
 
+    def open_matches_payload(self, user: User, participant_id: int | None = None) -> dict:
         pid = self._resolve_participant_id(user, participant_id)
+        active_fase = self.active_submission_phase()
 
         knockout = sorted(
             [m for m in self.matches.list() if self._is_knockout_match(m.fase)],
@@ -296,6 +338,8 @@ class PredictionSubmissionService:
             pred = preds.get(m.id)
 
             meta = display.get(m.fifa_id or "", {})
+
+            can_submit = self._can_submit_match(m, pred)
 
             out.append(
 
@@ -319,7 +363,9 @@ class PredictionSubmissionService:
 
                     "estado": m.estado.value,
 
-                    "can_submit": self._can_submit(pred),
+                    "can_submit": can_submit,
+
+                    "is_active_round": m.fase == active_fase and m.estado == MatchStatus.SCHEDULED,
 
                     "submitted": pred is not None and pred.locked_at is not None,
 
@@ -333,7 +379,7 @@ class PredictionSubmissionService:
 
             )
 
-        return out
+        return {"active_fase": active_fase, "matches": out}
 
     @staticmethod
     def _sort_knockout_matches(matches: list) -> list:

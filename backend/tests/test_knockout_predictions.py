@@ -14,7 +14,7 @@ from app.models.user import UserRole
 
 from app.services.auth_service import AuthService
 
-from app.services.knockout_service import FASE_R32, KnockoutService
+from app.services.knockout_service import FASE_R16, FASE_R32, KnockoutService
 
 from app.services.prediction_submission_service import (
 
@@ -366,7 +366,11 @@ def test_round_predictions_api(client, db, sample_participants):
 
     assert matches.status_code == 200
 
-    row = next(m for m in matches.json() if m["match_id"] == match.id)
+    payload = matches.json()
+
+    rows = payload["matches"] if isinstance(payload, dict) else payload
+
+    row = next(m for m in rows if m["match_id"] == match.id)
 
     assert row["submitted"] is True
 
@@ -391,5 +395,57 @@ def test_round_matches_colombia_date_netherlands(db, sample_participants):
     assert ned["fecha_dia_colombia"] == "2026-06-29"
 
     assert ned["hora_colombia"] == "20:00"
+
+
+
+def _finish_all_r32(db, ko: KnockoutService) -> None:
+
+    for m in ko.matches.list(fase=FASE_R32):
+
+        m.estado = MatchStatus.FINISHED
+
+        m.goles_local = 2
+
+        m.goles_visitante = 1
+
+    db.commit()
+
+
+
+
+
+def test_open_matches_includes_octavos_after_advance(db, sample_participants):
+
+    """Tras publicar octavos, los usuarios ven los 8 partidos con envío habilitado."""
+
+    p = sample_participants[0]
+
+    user = _participant_user(db, p)
+
+    ko = KnockoutService(db)
+
+    ko.advance_round_of_32()
+
+    _finish_all_r32(db, ko)
+
+    result = ko.advance_next_round(FASE_R32, sync_internet=False)
+
+    assert result["created"] == 8
+
+
+
+    payload = PredictionSubmissionService(db).open_matches_payload(user)
+
+    assert payload["active_fase"] == FASE_R16
+
+    octavos = [m for m in payload["matches"] if m["fase"] == FASE_R16]
+
+    assert len(octavos) == 8
+
+    assert all(m["can_submit"] for m in octavos)
+
+    assert all(m["is_active_round"] for m in octavos)
+
+    assert all(not m["submitted"] for m in octavos)
 
 

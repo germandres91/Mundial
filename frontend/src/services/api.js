@@ -102,7 +102,14 @@ export const endpoints = {
   resetUserPassword: (id, password) =>
     api.post(`/admin/users/${id}/reset-password`, { password }).then((r) => r.data),
 
-  roundMatches: () => api.get("/round-predictions/matches").then((r) => r.data),
+  roundMatches: () =>
+    api.get("/round-predictions/matches").then((r) => {
+      const data = r.data;
+      if (Array.isArray(data)) {
+        return { active_fase: null, matches: data };
+      }
+      return data;
+    }),
   submitRoundPrediction: (payload) =>
     api.post("/round-predictions/submit", payload).then((r) => r.data),
 
