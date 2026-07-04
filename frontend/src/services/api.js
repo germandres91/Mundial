@@ -109,6 +109,7 @@ export const endpoints = {
   knockoutStatus: () => api.get("/admin/knockout/status").then((r) => r.data),
   knockoutAdvanceR32: () => api.post("/admin/knockout/advance-r32").then((r) => r.data),
   knockoutSyncR32: () => api.post("/admin/knockout/sync-r32").then((r) => r.data),
+  knockoutSyncResults: () => api.post("/admin/knockout/sync-results").then((r) => r.data),
   knockoutAdvanceNext: (fromFase) =>
     api.post("/admin/knockout/advance-next", null, { params: { from_fase: fromFase } }).then((r) => r.data),
   roundSubmissions: (fase) =>

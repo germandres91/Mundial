@@ -15,6 +15,29 @@ const FASES = [
   "Final",
 ];
 
+const ADVANCE_FROM = [
+  {
+    fromFase: "Dieciseisavos de final",
+    label: "Publicar octavos",
+    hint: "Sincroniza resultados de internet y crea los 8 partidos de octavos con las llaves FIFA.",
+  },
+  {
+    fromFase: "Octavos de final",
+    label: "Publicar cuartos",
+    hint: "Crea los 4 partidos de cuartos de final desde los ganadores de octavos.",
+  },
+  {
+    fromFase: "Cuartos de final",
+    label: "Publicar semifinales",
+    hint: "Crea las 2 semifinales desde los ganadores de cuartos.",
+  },
+  {
+    fromFase: "Semifinales",
+    label: "Publicar final",
+    hint: "Crea el partido final desde los ganadores de semifinales.",
+  },
+];
+
 function MatrixCell({ cell }) {
   if (cell.submitted) {
     return (
@@ -63,11 +86,24 @@ export default function KnockoutAdmin() {
     onError: (e) => toast.error(e.response?.data?.detail || "No se pudo sincronizar"),
   });
 
+  const syncResults = useMutationWithRefresh(endpoints.knockoutSyncResults, {
+    onSuccess: (d) => {
+      const s = d.sync || {};
+      toast.success(
+        `Resultados sincronizados: ${s.updated ?? 0} partidos actualizados desde internet`
+      );
+      refreshAll();
+    },
+    onError: (e) => toast.error(e.response?.data?.detail || "No se pudo sincronizar"),
+  });
+
   const advanceNext = useMutationWithRefresh(endpoints.knockoutAdvanceNext, {
     onSuccess: (d) => {
+      const sync = d.sync?.sync;
+      const syncNote = sync ? ` · ${sync.updated ?? 0} resultados desde internet` : "";
       toast.success(
         d.created
-          ? `${d.fase}: ${d.created} partidos creados`
+          ? `${d.fase}: ${d.created} partidos creados${syncNote}`
           : d.message || "La ronda ya existía"
       );
       refreshAll();
@@ -172,22 +208,57 @@ export default function KnockoutAdmin() {
           disabled={syncR32.isPending}
           onClick={() => syncR32.mutate()}
         >
-          {syncR32.isPending ? "Sincronizando…" : "🔄 Actualizar calendario oficial"}
+          {syncR32.isPending ? "Sincronizando…" : "🔄 Actualizar calendario R32"}
         </button>
-        {FASES.slice(0, -1).map((f) => (
-          <button
-            key={f}
-            className="btn-ghost text-sm"
-            disabled={advanceNext.isPending}
-            onClick={() => {
-              if (window.confirm(`¿Avanzar a la siguiente ronda desde ${f}?`)) {
-                advanceNext.mutate(f);
-              }
-            }}
-          >
-            Siguiente ronda ← {f.split(" ")[0]}
-          </button>
-        ))}
+        <button
+          className="btn-ghost text-sm"
+          disabled={syncResults.isPending}
+          onClick={() => syncResults.mutate()}
+          title="Consulta ESPN/API y actualiza marcadores, penales y ganadores"
+        >
+          {syncResults.isPending ? "Consultando…" : "🌐 Sincronizar resultados (internet)"}
+        </button>
+      </div>
+
+      <div className="space-y-2">
+        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+          Generar siguiente ronda
+        </p>
+        <div className="flex flex-wrap gap-2">
+          {ADVANCE_FROM.map(({ fromFase, label, hint }) => {
+            const idx = FASES.indexOf(fromFase);
+            const phaseStatus = status?.[fromFase];
+            const nextPhase = FASES[idx + 1];
+            const nextStatus = status?.[nextPhase];
+            const canAdvance =
+              phaseStatus?.total > 0 &&
+              phaseStatus?.finished === phaseStatus?.total &&
+              (nextStatus?.total ?? 0) === 0;
+            return (
+              <button
+                key={fromFase}
+                className={canAdvance ? "btn-primary text-sm" : "btn-ghost text-sm"}
+                disabled={advanceNext.isPending}
+                title={hint}
+                onClick={() => {
+                  if (
+                    window.confirm(
+                      `${hint}\n\n¿Continuar con «${label}»?`
+                    )
+                  ) {
+                    advanceNext.mutate(fromFase);
+                  }
+                }}
+              >
+                {advanceNext.isPending ? "Procesando…" : `▶ ${label}`}
+              </button>
+            );
+          })}
+        </div>
+        <p className="text-xs text-slate-500">
+          Cada botón consulta internet, verifica ganadores y publica la ronda siguiente con el
+          calendario FIFA. Empieza con «Publicar octavos» cuando terminen los dieciseisavos.
+        </p>
       </div>
 
       <div>

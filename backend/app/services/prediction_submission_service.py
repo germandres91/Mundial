@@ -26,7 +26,8 @@ from app.repositories.participant_repository import ParticipantRepository
 
 from app.repositories.prediction_repository import PredictionRepository
 
-from app.services.knockout_service import KNOCKOUT_FASES, r32_display_by_fifa_id
+from app.services.knockout_service import KNOCKOUT_FASES, knockout_display_by_fifa_id
+from app.utils.bracket_paths import knockout_slot_sort_key
 
 from app.utils.datetime_fmt import utc_iso
 
@@ -276,11 +277,17 @@ class PredictionSubmissionService:
 
         pid = self._resolve_participant_id(user, participant_id)
 
-        knockout = [m for m in self.matches.list() if self._is_knockout_match(m.fase)]
+        knockout = sorted(
+            [m for m in self.matches.list() if self._is_knockout_match(m.fase)],
+            key=lambda m: (
+                list(KNOCKOUT_FASES).index(m.fase) if m.fase in KNOCKOUT_FASES else 99,
+                knockout_slot_sort_key(m.fifa_id),
+            ),
+        )
 
         preds = {p.match_id: p for p in self.predictions.list(participant_id=pid)}
 
-        display = r32_display_by_fifa_id()
+        display = knockout_display_by_fifa_id()
 
         out = []
 
@@ -326,25 +333,30 @@ class PredictionSubmissionService:
 
             )
 
-        return sorted(out, key=lambda x: (x["fase"] or "", x["fecha"] or ""))
+        return out
 
-
+    @staticmethod
+    def _sort_knockout_matches(matches: list) -> list:
+        return sorted(
+            matches,
+            key=lambda m: (
+                list(KNOCKOUT_FASES).index(m.fase) if m.fase in KNOCKOUT_FASES else 99,
+                knockout_slot_sort_key(m.fifa_id),
+            ),
+        )
 
     def submission_matrix(self, fase: str | None = None) -> dict:
-
         """Matriz participante × partido para el panel admin."""
 
         participants = self.participants.list()
 
-        matches = (
-
-            [m for m in self.matches.list(fase=fase) if self._is_knockout_match(m.fase)]
-
-            if fase
-
-            else [m for m in self.matches.list() if self._is_knockout_match(m.fase)]
-
-        )
+        if fase:
+            matches = [
+                m for m in self.matches.list(fase=fase) if self._is_knockout_match(m.fase)
+            ]
+        else:
+            matches = [m for m in self.matches.list() if self._is_knockout_match(m.fase)]
+        matches = self._sort_knockout_matches(matches)
 
 
 
@@ -402,7 +414,7 @@ class PredictionSubmissionService:
 
                     "fecha": utc_iso(m.fecha),
 
-                    **r32_display_by_fifa_id().get(m.fifa_id or "", {}),
+                    **knockout_display_by_fifa_id().get(m.fifa_id or "", {}),
 
                     "estado": m.estado.value,
 

@@ -373,6 +373,12 @@ def knockout_sync_r32(db: Session = Depends(get_db)) -> dict:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
+@router.post("/knockout/sync-results")
+def knockout_sync_results(db: Session = Depends(get_db)) -> dict:
+    """Sincroniza marcadores y ganadores desde internet (ESPN/API)."""
+    return KnockoutService(db).sync_internet_results()
+
+
 @router.post("/knockout/advance-next")
 def knockout_advance_next(from_fase: str, db: Session = Depends(get_db)) -> dict:
     """Avanza a la siguiente ronda cuando la fase indicada terminó."""

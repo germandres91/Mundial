@@ -1,0 +1,139 @@
+{
+  "notas": "Calendario oficial FIFA Mundial 2026 — octavos en adelante. Los equipos se calculan desde los ganadores de la ronda anterior; aquí solo horarios y sedes.",
+  "Octavos de final": {
+    "partidos": [
+      {
+        "fifa_id": "KO-R16-1",
+        "match_no": 89,
+        "fecha_dia_colombia": "2026-07-04",
+        "hora_colombia": "12:00",
+        "fecha_utc": "2026-07-04T17:00:00+00:00",
+        "sede": "Los Angeles"
+      },
+      {
+        "fifa_id": "KO-R16-2",
+        "match_no": 90,
+        "fecha_dia_colombia": "2026-07-04",
+        "hora_colombia": "16:00",
+        "fecha_utc": "2026-07-04T21:00:00+00:00",
+        "sede": "Boston"
+      },
+      {
+        "fifa_id": "KO-R16-3",
+        "match_no": 91,
+        "fecha_dia_colombia": "2026-07-04",
+        "hora_colombia": "20:00",
+        "fecha_utc": "2026-07-05T01:00:00+00:00",
+        "sede": "Houston"
+      },
+      {
+        "fifa_id": "KO-R16-4",
+        "match_no": 92,
+        "fecha_dia_colombia": "2026-07-05",
+        "hora_colombia": "12:00",
+        "fecha_utc": "2026-07-05T17:00:00+00:00",
+        "sede": "Ciudad de México"
+      },
+      {
+        "fifa_id": "KO-R16-5",
+        "match_no": 93,
+        "fecha_dia_colombia": "2026-07-06",
+        "hora_colombia": "19:00",
+        "fecha_utc": "2026-07-07T00:00:00+00:00",
+        "sede": "San Francisco"
+      },
+      {
+        "fifa_id": "KO-R16-6",
+        "match_no": 94,
+        "fecha_dia_colombia": "2026-07-06",
+        "hora_colombia": "14:00",
+        "fecha_utc": "2026-07-06T19:00:00+00:00",
+        "sede": "Toronto"
+      },
+      {
+        "fifa_id": "KO-R16-7",
+        "match_no": 95,
+        "fecha_dia_colombia": "2026-07-05",
+        "hora_colombia": "16:00",
+        "fecha_utc": "2026-07-05T21:00:00+00:00",
+        "sede": "Vancouver"
+      },
+      {
+        "fifa_id": "KO-R16-8",
+        "match_no": 96,
+        "fecha_dia_colombia": "2026-07-05",
+        "hora_colombia": "20:00",
+        "fecha_utc": "2026-07-06T01:00:00+00:00",
+        "sede": "Miami"
+      }
+    ]
+  },
+  "Cuartos de final": {
+    "partidos": [
+      {
+        "fifa_id": "KO-QF-1",
+        "match_no": 97,
+        "fecha_dia_colombia": "2026-07-09",
+        "hora_colombia": "15:00",
+        "fecha_utc": "2026-07-09T20:00:00+00:00",
+        "sede": "Boston"
+      },
+      {
+        "fifa_id": "KO-QF-2",
+        "match_no": 98,
+        "fecha_dia_colombia": "2026-07-09",
+        "hora_colombia": "19:00",
+        "fecha_utc": "2026-07-10T00:00:00+00:00",
+        "sede": "Los Angeles"
+      },
+      {
+        "fifa_id": "KO-QF-3",
+        "match_no": 99,
+        "fecha_dia_colombia": "2026-07-10",
+        "hora_colombia": "14:00",
+        "fecha_utc": "2026-07-10T19:00:00+00:00",
+        "sede": "Miami"
+      },
+      {
+        "fifa_id": "KO-QF-4",
+        "match_no": 100,
+        "fecha_dia_colombia": "2026-07-10",
+        "hora_colombia": "18:00",
+        "fecha_utc": "2026-07-10T23:00:00+00:00",
+        "sede": "Kansas City"
+      }
+    ]
+  },
+  "Semifinales": {
+    "partidos": [
+      {
+        "fifa_id": "KO-SF-1",
+        "match_no": 101,
+        "fecha_dia_colombia": "2026-07-13",
+        "hora_colombia": "15:00",
+        "fecha_utc": "2026-07-13T20:00:00+00:00",
+        "sede": "Dallas"
+      },
+      {
+        "fifa_id": "KO-SF-2",
+        "match_no": 102,
+        "fecha_dia_colombia": "2026-07-14",
+        "hora_colombia": "14:00",
+        "fecha_utc": "2026-07-14T19:00:00+00:00",
+        "sede": "Atlanta"
+      }
+    ]
+  },
+  "Final": {
+    "partidos": [
+      {
+        "fifa_id": "KO-F-1",
+        "match_no": 103,
+        "fecha_dia_colombia": "2026-07-18",
+        "hora_colombia": "16:00",
+        "fecha_utc": "2026-07-18T21:00:00+00:00",
+        "sede": "New York / New Jersey"
+      }
+    ]
+  }
+}
