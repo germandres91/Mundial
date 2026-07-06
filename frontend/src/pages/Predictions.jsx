@@ -201,14 +201,14 @@ export default function Predictions() {
             ? evaluatePrediction(existing.pred_local, existing.pred_visitante, m)
             : null;
 
-        if (isAdmin && m.estado === "SCHEDULED") {
+        if (isAdmin && participantId) {
           return (
             <div className="flex flex-wrap items-center gap-2">
               <input
                 type="number"
                 min="0"
                 className="input w-16 text-center"
-                defaultValue={existing?.pred_local}
+                defaultValue={existing?.pred_local ?? ""}
                 onChange={(e) => setDraft(m.id, "local", e.target.value)}
               />
               <span className="text-slate-500">-</span>
@@ -216,7 +216,7 @@ export default function Predictions() {
                 type="number"
                 min="0"
                 className="input w-16 text-center"
-                defaultValue={existing?.pred_visitante}
+                defaultValue={existing?.pred_visitante ?? ""}
                 onChange={(e) => setDraft(m.id, "visitante", e.target.value)}
               />
               {renderAciertoBadges(acierto)}
@@ -244,7 +244,7 @@ export default function Predictions() {
             key: "action",
             header: "",
             render: (m) =>
-              m.estado === "SCHEDULED" && (
+              participantId ? (
                 <button
                   className="btn-primary px-3 py-1.5 text-xs"
                   disabled={save.isPending}
@@ -252,7 +252,7 @@ export default function Predictions() {
                 >
                   Guardar
                 </button>
-              ),
+              ) : null,
           },
         ]
       : []),
@@ -264,7 +264,7 @@ export default function Predictions() {
         <h1 className="text-2xl font-extrabold">Predicciones</h1>
         <p className="text-sm text-slate-500">
           {isAdmin
-            ? "Registra las predicciones antes de cada partido y el marcador real cuando finalicen (columna Resultado)."
+            ? "Selecciona un participante y edita sus predicciones en cualquier partido (incluso finalizados). También puedes registrar el marcador real en la columna Resultado."
             : "Consulta las predicciones registradas por cada participante y el resultado real de cada partido."}
         </p>
       </div>

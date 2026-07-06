@@ -108,8 +108,15 @@ def test_match_result_flow(db, client, auth_headers):
     assert ranking[0]["puntos_totales"] == 5
 
 
-def test_prediction_blocked_after_finish(db, client, auth_headers):
-    match = Match(fifa_id="M-2", local="X", visitante="Y", estado=MatchStatus.FINISHED)
+def test_admin_can_edit_prediction_after_finish(db, client, auth_headers):
+    match = Match(
+        fifa_id="M-2",
+        local="X",
+        visitante="Y",
+        estado=MatchStatus.FINISHED,
+        goles_local=2,
+        goles_visitante=1,
+    )
     db.add(match)
     db.commit()
     participant = client.post(
@@ -121,12 +128,32 @@ def test_prediction_blocked_after_finish(db, client, auth_headers):
         json={
             "participant_id": participant["id"],
             "match_id": match.id,
-            "pred_local": 1,
+            "pred_local": 2,
             "pred_visitante": 1,
         },
         headers=auth_headers,
     )
-    assert resp.status_code == 400
+    assert resp.status_code == 201
+    assert resp.json()["pred_local"] == 2
+
+    ranking = client.get("/api/v1/ranking", headers=auth_headers).json()
+    row = next(r for r in ranking if r["participant_id"] == participant["id"])
+    assert row["puntos_totales"] == 5
+
+    update = client.post(
+        "/api/v1/predictions",
+        json={
+            "participant_id": participant["id"],
+            "match_id": match.id,
+            "pred_local": 0,
+            "pred_visitante": 0,
+        },
+        headers=auth_headers,
+    )
+    assert update.status_code == 201
+    ranking2 = client.get("/api/v1/ranking", headers=auth_headers).json()
+    row2 = next(r for r in ranking2 if r["participant_id"] == participant["id"])
+    assert row2["puntos_totales"] == 0
 
 
 def test_dashboard_summary(client, auth_headers):
