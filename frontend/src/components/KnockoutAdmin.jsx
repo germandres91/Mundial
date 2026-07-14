@@ -29,7 +29,7 @@ const ADVANCE_FROM = [
   {
     fromFase: "Cuartos de final",
     label: "Publicar semifinales",
-    hint: "Crea las 2 semifinales desde los ganadores de cuartos.",
+    hint: "Crea o corrige las 2 semifinales con el cuadro FIFA (1º vs 3º y 2º vs 4º de cuartos).",
   },
   {
     fromFase: "Semifinales",
@@ -101,11 +101,13 @@ export default function KnockoutAdmin() {
     onSuccess: (d) => {
       const sync = d.sync?.sync;
       const syncNote = sync ? ` · ${sync.updated ?? 0} resultados desde internet` : "";
-      toast.success(
-        d.created
-          ? `${d.fase}: ${d.created} partidos creados${syncNote}`
-          : d.message || "La ronda ya existía"
-      );
+      if (d.created) {
+        toast.success(`${d.fase}: ${d.created} partidos creados${syncNote}`);
+      } else if (d.updated) {
+        toast.success(d.message || `${d.fase}: ${d.updated} partidos corregidos${syncNote}`);
+      } else {
+        toast.success(d.message || "La ronda ya existía");
+      }
       refreshAll();
     },
     onError: (e) => toast.error(e.response?.data?.detail || "No se pudo avanzar"),

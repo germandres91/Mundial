@@ -19,14 +19,42 @@ DEFAULT_R32_TO_R16: list[tuple[int, int]] = [
     (14, 16),
 ]
 
+# Octavos → cuartos: emparejamiento contiguo en el orden KO-R16.
+DEFAULT_R16_TO_QF: list[tuple[int, int]] = [(1, 2), (3, 4), (5, 6), (7, 8)]
 
-def load_r32_to_r16_pairs() -> list[tuple[int, int]]:
+# Cuartos → semis: FIFA empareja 1-3 y 2-4 (no 1-2 y 3-4).
+DEFAULT_QF_TO_SF: list[tuple[int, int]] = [(1, 3), (2, 4)]
+
+DEFAULT_SF_TO_FINAL: list[tuple[int, int]] = [(1, 2)]
+
+
+def _load_paths() -> dict:
     path = resolve_path(PATHS_FILE)
     if not path.exists():
-        return DEFAULT_R32_TO_R16
-    data = json.loads(path.read_text(encoding="utf-8"))
-    raw = data.get("r32_to_r16", DEFAULT_R32_TO_R16)
+        return {}
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def _pairs_from(key: str, default: list[tuple[int, int]]) -> list[tuple[int, int]]:
+    data = _load_paths()
+    raw = data.get(key, default)
     return [(int(a), int(b)) for a, b in raw]
+
+
+def load_r32_to_r16_pairs() -> list[tuple[int, int]]:
+    return _pairs_from("r32_to_r16", DEFAULT_R32_TO_R16)
+
+
+def load_r16_to_qf_pairs() -> list[tuple[int, int]]:
+    return _pairs_from("r16_to_qf", DEFAULT_R16_TO_QF)
+
+
+def load_qf_to_sf_pairs() -> list[tuple[int, int]]:
+    return _pairs_from("qf_to_sf", DEFAULT_QF_TO_SF)
+
+
+def load_sf_to_final_pairs() -> list[tuple[int, int]]:
+    return _pairs_from("sf_to_final", DEFAULT_SF_TO_FINAL)
 
 
 def r32_match_number(fifa_id: str | None) -> int | None:
@@ -34,6 +62,15 @@ def r32_match_number(fifa_id: str | None) -> int | None:
         return None
     try:
         return int(fifa_id.rsplit("-", 1)[-1])
+    except ValueError:
+        return None
+
+
+def knockout_slot_number(fifa_id: str | None, prefix: str) -> int | None:
+    if not fifa_id or not fifa_id.startswith(prefix):
+        return None
+    try:
+        return int(fifa_id[len(prefix) :])
     except ValueError:
         return None
 
@@ -72,8 +109,51 @@ def pair_winners_r32_to_r16(
     return pairs
 
 
+def pair_winners_by_slot_pairs(
+    matches: list,
+    winner_fn,
+    slot_prefix: str,
+    slot_pairs: list[tuple[int, int]],
+    label: str,
+) -> list[tuple[str, str]]:
+    """Empareja ganadores según índices 1-based de la ronda (KO-*-N)."""
+    by_num: dict[int, str] = {}
+    for m in matches:
+        num = knockout_slot_number(getattr(m, "fifa_id", None), slot_prefix)
+        if num is None:
+            continue
+        w = winner_fn(m)
+        if w:
+            by_num[num] = w
+
+    pairs: list[tuple[str, str]] = []
+    for a, b in slot_pairs:
+        if a not in by_num or b not in by_num:
+            raise ValueError(f"Faltan ganadores para el cruce {label}: {a} vs {b}")
+        pairs.append((by_num[a], by_num[b]))
+    return pairs
+
+
+def pair_winners_r16_to_qf(matches: list, winner_fn) -> list[tuple[str, str]]:
+    return pair_winners_by_slot_pairs(
+        matches, winner_fn, "KO-R16-", load_r16_to_qf_pairs(), "R16→QF"
+    )
+
+
+def pair_winners_qf_to_sf(matches: list, winner_fn) -> list[tuple[str, str]]:
+    return pair_winners_by_slot_pairs(
+        matches, winner_fn, "KO-QF-", load_qf_to_sf_pairs(), "QF→SF"
+    )
+
+
+def pair_winners_sf_to_final(matches: list, winner_fn) -> list[tuple[str, str]]:
+    return pair_winners_by_slot_pairs(
+        matches, winner_fn, "KO-SF-", load_sf_to_final_pairs(), "SF→Final"
+    )
+
+
 def pair_winners_sequential(winners: list[str]) -> list[tuple[str, str]]:
-    """Empareja ganadores en orden de bracket: 1-2, 3-4, … (octavos → final)."""
+    """Empareja ganadores en orden: 1-2, 3-4, … (legacy / tests)."""
     pairs: list[tuple[str, str]] = []
     for i in range(0, len(winners), 2):
         if i + 1 >= len(winners):

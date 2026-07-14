@@ -10,6 +10,7 @@ from datetime import date, datetime, timedelta, timezone
 
 
 
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 
@@ -26,8 +27,10 @@ from app.services.tournament_service import TournamentService
 
 from app.utils.bracket_paths import (
     knockout_slot_sort_key,
+    pair_winners_qf_to_sf,
+    pair_winners_r16_to_qf,
     pair_winners_r32_to_r16,
-    pair_winners_sequential,
+    pair_winners_sf_to_final,
 )
 
 
@@ -373,27 +376,10 @@ class KnockoutService:
             )
 
         next_fase, prefix, _count = chain[from_fase]
-        existing_next = self.matches.list(fase=next_fase)
-        if existing_next:
-            return {
-                "created": 0,
-                "message": f"{next_fase} ya existe ({len(existing_next)} partidos)",
-                "sync": sync_info,
-            }
-
-        if from_fase == FASE_R32:
-            try:
-                pairs = pair_winners_r32_to_r16(current, lambda m: m.classified_winner())
-            except ValueError as exc:
-                raise ValueError(str(exc)) from exc
-        else:
-            winners: list[str] = []
-            for m in current:
-                winner = m.classified_winner()
-                if winner is None:
-                    raise ValueError(f"Partido sin ganador clasificado: {m.fifa_id}")
-                winners.append(winner)
-            pairs = pair_winners_sequential(winners)
+        try:
+            pairs = self._pairs_for_advance(from_fase, current)
+        except ValueError as exc:
+            raise ValueError(str(exc)) from exc
 
         schedule = round_schedule_by_fifa_id(next_fase)
         provider_matches = []
@@ -404,7 +390,11 @@ class KnockoutService:
 
         base = datetime.now(timezone.utc) + timedelta(days=2)
         created = 0
+        updated = 0
         partidos: list[dict] = []
+        existing_by_fifa = {
+            m.fifa_id: m for m in self.matches.list(fase=next_fase) if m.fifa_id
+        }
 
         for i, (local, visitante) in enumerate(pairs, start=1):
             fifa_id = f"{prefix}-{i}"
@@ -418,16 +408,47 @@ class KnockoutService:
             if pm and pm.fecha:
                 fecha = pm.fecha
 
-            self.matches.create(
-                fifa_id=fifa_id,
-                grupo=None,
-                fase=next_fase,
-                local=local,
-                visitante=visitante,
-                fecha=fecha,
-                estado=MatchStatus.SCHEDULED,
-            )
-            created += 1
+            existing = existing_by_fifa.get(fifa_id)
+            if existing is not None:
+                if existing.estado != MatchStatus.SCHEDULED:
+                    partidos.append(
+                        {
+                            "fifa_id": fifa_id,
+                            "local": existing.local,
+                            "visitante": existing.visitante,
+                            "fecha": existing.fecha.isoformat() if existing.fecha else None,
+                            "hora_colombia": fx.get("hora_colombia"),
+                            "skipped": "ya no está programado",
+                        }
+                    )
+                    continue
+                changed = (
+                    existing.local != local
+                    or existing.visitante != visitante
+                    or existing.fecha != fecha
+                )
+                if changed:
+                    teams_changed = (
+                        existing.local != local or existing.visitante != visitante
+                    )
+                    existing.local = local
+                    existing.visitante = visitante
+                    existing.fecha = fecha
+                    if teams_changed:
+                        self._clear_match_predictions(existing.id)
+                    updated += 1
+            else:
+                self.matches.create(
+                    fifa_id=fifa_id,
+                    grupo=None,
+                    fase=next_fase,
+                    local=local,
+                    visitante=visitante,
+                    fecha=fecha,
+                    estado=MatchStatus.SCHEDULED,
+                )
+                created += 1
+
             partidos.append(
                 {
                     "fifa_id": fifa_id,
@@ -439,13 +460,44 @@ class KnockoutService:
             )
 
         self.db.commit()
+        if created == 0 and updated == 0 and existing_by_fifa:
+            message = f"{next_fase} ya existe ({len(existing_by_fifa)} partidos) y está al día"
+        elif updated and not created:
+            message = f"{next_fase}: {updated} partidos corregidos al cuadro FIFA"
+        else:
+            message = None
         return {
             "created": created,
+            "updated": updated,
             "fase": next_fase,
             "from_fase": from_fase,
             "sync": sync_info,
             "partidos": partidos,
+            "message": message,
         }
+
+    def _pairs_for_advance(self, from_fase: str, current: list) -> list[tuple[str, str]]:
+        winner_fn = lambda m: m.classified_winner()
+        if from_fase == FASE_R32:
+            return pair_winners_r32_to_r16(current, winner_fn)
+        if from_fase == FASE_R16:
+            return pair_winners_r16_to_qf(current, winner_fn)
+        if from_fase == FASE_QF:
+            return pair_winners_qf_to_sf(current, winner_fn)
+        if from_fase == FASE_SF:
+            return pair_winners_sf_to_final(current, winner_fn)
+        raise ValueError(f"Fase no soportada: {from_fase}")
+
+    def _clear_match_predictions(self, match_id: int) -> None:
+        """Borra predicciones (y puntajes) de un partido cuyos equipos se corrigieron."""
+        from app.models.score import Score
+        from app.repositories.prediction_repository import PredictionRepository
+
+        for pred in PredictionRepository(self.db).list_for_match(match_id):
+            self.db.delete(pred)
+        for score in self.db.scalars(select(Score).where(Score.match_id == match_id)):
+            self.db.delete(score)
+        self.db.flush()
 
     def status(self) -> dict:
         """Resumen de fases eliminatorias."""

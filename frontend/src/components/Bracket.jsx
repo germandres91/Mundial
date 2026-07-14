@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { flagUrl } from "../utils/flags";
-import { R32_TO_R16, pairByIndices, pairSequential } from "../utils/bracketPaths";
+import { indicesForPhase, pairByIndices } from "../utils/bracketPaths";
 import { sortKnockoutMatches } from "../utils/knockoutSort";
 
 const ROUNDS = [
@@ -46,10 +46,9 @@ function matchToCard(k, { projected = false } = {}) {
 }
 
 function projectNextRound(prevCards, phaseKey) {
-  if (phaseKey === "Octavos de final") {
-    return pairByIndices(prevCards, R32_TO_R16);
-  }
-  return pairSequential(prevCards);
+  const indices = indicesForPhase(phaseKey);
+  if (!indices) return [];
+  return pairByIndices(prevCards, indices);
 }
 
 function teamPairKey(a, b) {
