@@ -60,6 +60,34 @@ def test_qf_to_sf_fifa_pairing_france_spain():
     assert wrong == [("Francia", "Inglaterra"), ("España", "Argentina")]
 
 
+def test_sf_to_third_and_final():
+    """Final: España-Argentina; 3er puesto: Francia-Inglaterra."""
+    from app.utils.bracket_paths import pair_losers_sf_to_third, pair_winners_sf_to_final
+
+    class _SF:
+        def __init__(self, fifa_id, winner, loser):
+            self.fifa_id = fifa_id
+            self._w = winner
+            self._l = loser
+
+        def classified_winner(self):
+            return self._w
+
+        def classified_loser(self):
+            return self._l
+
+    sf = [
+        _SF("KO-SF-1", "España", "Francia"),
+        _SF("KO-SF-2", "Argentina", "Inglaterra"),
+    ]
+    assert pair_winners_sf_to_final(sf, lambda m: m.classified_winner()) == [
+        ("España", "Argentina")
+    ]
+    assert pair_losers_sf_to_third(sf, lambda m: m.classified_loser()) == [
+        ("Francia", "Inglaterra")
+    ]
+
+
 def test_r16_to_qf_contiguous():
     r16 = [
         _m("KO-R16-1", "Marruecos"),

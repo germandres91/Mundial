@@ -449,3 +449,169 @@ def test_open_matches_includes_octavos_after_advance(db, sample_participants):
     assert all(not m["submitted"] for m in octavos)
 
 
+
+def test_publish_final_creates_third_place(db):
+
+    """Al publicar desde semis se crean Final (ganadores) y Tercer puesto (perdedores)."""
+
+    from app.models.match import Match
+
+    from app.services.knockout_service import FASE_3RD, FASE_FINAL, FASE_SF
+
+
+
+    for i, (local, visitante, winner) in enumerate(
+
+        [
+
+            ("Francia", "España", "España"),
+
+            ("Inglaterra", "Argentina", "Argentina"),
+
+        ],
+
+        start=1,
+
+    ):
+
+        m = Match(
+
+            fifa_id=f"KO-SF-{i}",
+
+            fase=FASE_SF,
+
+            local=local,
+
+            visitante=visitante,
+
+            estado=MatchStatus.FINISHED,
+
+            goles_local=0 if winner != local else 2,
+
+            goles_visitante=2 if winner != local else 0,
+
+            ganador=winner,
+
+        )
+
+        db.add(m)
+
+    db.commit()
+
+
+
+    result = KnockoutService(db).advance_next_round(FASE_SF, sync_internet=False)
+
+    assert result["created"] == 2
+
+
+
+    third = KnockoutService(db).matches.get_by_fifa_id("KO-3RD-1")
+
+    final = KnockoutService(db).matches.get_by_fifa_id("KO-F-1")
+
+    assert third is not None
+
+    assert third.fase == FASE_3RD
+
+    assert {third.local, third.visitante} == {"Francia", "Inglaterra"}
+
+    assert final is not None
+
+    assert final.fase == FASE_FINAL
+
+    assert {final.local, final.visitante} == {"España", "Argentina"}
+
+
+
+    # Republicar solo crea el faltante / no duplica
+
+    again = KnockoutService(db).advance_next_round(FASE_SF, sync_internet=False)
+
+    assert again["created"] == 0
+
+
+
+def test_publish_third_when_final_already_exists(db):
+
+    """Si la final ya está publicada, republicar crea solo el tercer puesto."""
+
+    from app.models.match import Match
+
+    from app.services.knockout_service import FASE_3RD, FASE_FINAL, FASE_SF
+
+
+
+    for i, (local, visitante, winner) in enumerate(
+
+        [
+
+            ("Francia", "España", "España"),
+
+            ("Inglaterra", "Argentina", "Argentina"),
+
+        ],
+
+        start=1,
+
+    ):
+
+        db.add(
+
+            Match(
+
+                fifa_id=f"KO-SF-{i}",
+
+                fase=FASE_SF,
+
+                local=local,
+
+                visitante=visitante,
+
+                estado=MatchStatus.FINISHED,
+
+                goles_local=0 if winner != local else 2,
+
+                goles_visitante=2 if winner != local else 0,
+
+                ganador=winner,
+
+            )
+
+        )
+
+    db.add(
+
+        Match(
+
+            fifa_id="KO-F-1",
+
+            fase=FASE_FINAL,
+
+            local="España",
+
+            visitante="Argentina",
+
+            estado=MatchStatus.SCHEDULED,
+
+        )
+
+    )
+
+    db.commit()
+
+
+
+    result = KnockoutService(db).advance_next_round(FASE_SF, sync_internet=False)
+
+    assert result["created"] == 1
+
+    third = KnockoutService(db).matches.get_by_fifa_id("KO-3RD-1")
+
+    assert third is not None
+
+    assert third.fase == FASE_3RD
+
+    assert {third.local, third.visitante} == {"Francia", "Inglaterra"}
+
+

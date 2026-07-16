@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { flagUrl } from "../utils/flags";
-import { indicesForPhase, pairByIndices } from "../utils/bracketPaths";
+import { indicesForPhase, pairByIndices, SF_TO_FINAL } from "../utils/bracketPaths";
 import { sortKnockoutMatches } from "../utils/knockoutSort";
 
 const ROUNDS = [
@@ -8,6 +8,7 @@ const ROUNDS = [
   { key: "Octavos de final", title: "Octavos" },
   { key: "Cuartos de final", title: "Cuartos" },
   { key: "Semifinales", title: "Semifinales" },
+  { key: "Tercer puesto", title: "3er puesto" },
   { key: "Final", title: "Final" },
 ];
 
@@ -45,10 +46,25 @@ function matchToCard(k, { projected = false } = {}) {
   };
 }
 
-function projectNextRound(prevCards, phaseKey) {
-  const indices = indicesForPhase(phaseKey);
-  if (!indices) return [];
-  return pairByIndices(prevCards, indices);
+function loserTeam(card) {
+  if (!card?.winner || !card.a || !card.b) return null;
+  return card.a.equipo === card.winner.equipo ? card.b : card.a;
+}
+
+function projectThirdPlace(sfCards) {
+  return [
+    {
+      key: "proj-3rd",
+      a: loserTeam(sfCards[0]),
+      b: loserTeam(sfCards[1]),
+      scoreA: null,
+      scoreB: null,
+      winner: null,
+      live: false,
+      minuto: null,
+      projected: true,
+    },
+  ];
 }
 
 function teamPairKey(a, b) {
@@ -90,12 +106,21 @@ function buildRounds(knockout) {
   let prevCards = r32.map((m) => matchToCard(m));
   const rounds = [prevCards];
 
-  for (const { key } of ROUNDS.slice(1)) {
-    const projected = projectNextRound(prevCards, key);
+  for (const key of ["Octavos de final", "Cuartos de final", "Semifinales"]) {
+    const indices = indicesForPhase(key);
+    const projected = pairByIndices(prevCards, indices);
     const cards = mergeProjectedWithDb(projected, byPhase[key] || []);
     rounds.push(cards);
     prevCards = cards;
   }
+
+  const sfCards = prevCards;
+  rounds.push(
+    mergeProjectedWithDb(projectThirdPlace(sfCards), byPhase["Tercer puesto"] || [])
+  );
+  rounds.push(
+    mergeProjectedWithDb(pairByIndices(sfCards, SF_TO_FINAL), byPhase["Final"] || [])
+  );
 
   return rounds;
 }

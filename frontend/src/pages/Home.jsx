@@ -19,6 +19,7 @@ const KO_PHASES = [
   "Octavos de final",
   "Cuartos de final",
   "Semifinales",
+  "Tercer puesto",
   "Final",
 ];
 

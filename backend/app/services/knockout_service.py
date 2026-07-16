@@ -27,6 +27,7 @@ from app.services.tournament_service import TournamentService
 
 from app.utils.bracket_paths import (
     knockout_slot_sort_key,
+    pair_losers_sf_to_third,
     pair_winners_qf_to_sf,
     pair_winners_r16_to_qf,
     pair_winners_r32_to_r16,
@@ -47,11 +48,13 @@ FASE_QF = "Cuartos de final"
 
 FASE_SF = "Semifinales"
 
+FASE_3RD = "Tercer puesto"
+
 FASE_FINAL = "Final"
 
 
 
-KNOCKOUT_FASES = (FASE_R32, FASE_R16, FASE_QF, FASE_SF, FASE_FINAL)
+KNOCKOUT_FASES = (FASE_R32, FASE_R16, FASE_QF, FASE_SF, FASE_3RD, FASE_FINAL)
 
 
 
@@ -381,19 +384,98 @@ class KnockoutService:
         except ValueError as exc:
             raise ValueError(str(exc)) from exc
 
-        schedule = round_schedule_by_fifa_id(next_fase)
         provider_matches = []
         if sync_internet:
             from app.providers import get_provider
 
             provider_matches = get_provider().fetch_matches()
 
+        rounds_to_write: list[tuple[str, str, list[tuple[str, str]]]] = [
+            (next_fase, prefix, pairs)
+        ]
+        if from_fase == FASE_SF:
+            try:
+                third_pairs = pair_losers_sf_to_third(
+                    current, lambda m: m.classified_loser()
+                )
+            except ValueError as exc:
+                raise ValueError(str(exc)) from exc
+            # Tercer puesto (Match 103) antes que la Final (Match 104).
+            rounds_to_write = [
+                (FASE_3RD, "KO-3RD", third_pairs),
+                (FASE_FINAL, "KO-F", pairs),
+            ]
+
+        created = 0
+        updated = 0
+        partidos: list[dict] = []
+        fases_creadas: list[str] = []
+
+        for fase_name, id_prefix, fase_pairs in rounds_to_write:
+            stats = self._upsert_round_matches(
+                fase=fase_name,
+                prefix=id_prefix,
+                pairs=fase_pairs,
+                provider_matches=provider_matches,
+            )
+            created += stats["created"]
+            updated += stats["updated"]
+            partidos.extend(stats["partidos"])
+            if stats["created"] or stats["updated"] or stats["partidos"]:
+                fases_creadas.append(fase_name)
+
+        self.db.commit()
+
+        if from_fase == FASE_SF:
+            if created == 0 and updated == 0:
+                message = "Final y tercer puesto ya existen y están al día"
+            elif updated and not created:
+                message = (
+                    f"Final / tercer puesto: {updated} partidos corregidos al cuadro FIFA"
+                )
+            else:
+                message = None
+            fase_label = " / ".join(fases_creadas) if fases_creadas else FASE_FINAL
+        elif created == 0 and updated == 0:
+            existing_count = len(self.matches.list(fase=next_fase))
+            message = (
+                f"{next_fase} ya existe ({existing_count} partidos) y está al día"
+                if existing_count
+                else None
+            )
+            fase_label = next_fase
+        elif updated and not created:
+            message = f"{next_fase}: {updated} partidos corregidos al cuadro FIFA"
+            fase_label = next_fase
+        else:
+            message = None
+            fase_label = next_fase
+
+        return {
+            "created": created,
+            "updated": updated,
+            "fase": fase_label,
+            "from_fase": from_fase,
+            "sync": sync_info,
+            "partidos": partidos,
+            "message": message,
+        }
+
+    def _upsert_round_matches(
+        self,
+        *,
+        fase: str,
+        prefix: str,
+        pairs: list[tuple[str, str]],
+        provider_matches: list,
+    ) -> dict:
+        schedule = round_schedule_by_fifa_id(fase)
         base = datetime.now(timezone.utc) + timedelta(days=2)
         created = 0
         updated = 0
         partidos: list[dict] = []
         existing_by_fifa = {
-            m.fifa_id: m for m in self.matches.list(fase=next_fase) if m.fifa_id
+            m.fifa_id: m for m in self.matches.list(fase=fase) if m.fifa_id
         }
 
         for i, (local, visitante) in enumerate(pairs, start=1):
@@ -409,11 +491,16 @@ class KnockoutService:
                 fecha = pm.fecha
 
             existing = existing_by_fifa.get(fifa_id)
+            if existing is None:
+                # También busca por fifa_id global (p. ej. Final ya creada sin 3er puesto).
+                existing = self.matches.get_by_fifa_id(fifa_id)
+
             if existing is not None:
                 if existing.estado != MatchStatus.SCHEDULED:
                     partidos.append(
                         {
                             "fifa_id": fifa_id,
+                            "fase": fase,
                             "local": existing.local,
                             "visitante": existing.visitante,
                             "fecha": existing.fecha.isoformat() if existing.fecha else None,
@@ -426,6 +513,7 @@ class KnockoutService:
                     existing.local != local
                     or existing.visitante != visitante
                     or existing.fecha != fecha
+                    or existing.fase != fase
                 )
                 if changed:
                     teams_changed = (
@@ -434,6 +522,7 @@ class KnockoutService:
                     existing.local = local
                     existing.visitante = visitante
                     existing.fecha = fecha
+                    existing.fase = fase
                     if teams_changed:
                         self._clear_match_predictions(existing.id)
                     updated += 1
@@ -441,7 +530,7 @@ class KnockoutService:
                 self.matches.create(
                     fifa_id=fifa_id,
                     grupo=None,
-                    fase=next_fase,
+                    fase=fase,
                     local=local,
                     visitante=visitante,
                     fecha=fecha,
@@ -452,6 +541,7 @@ class KnockoutService:
             partidos.append(
                 {
                     "fifa_id": fifa_id,
+                    "fase": fase,
                     "local": local,
                     "visitante": visitante,
                     "fecha": fecha.isoformat(),
@@ -459,22 +549,7 @@ class KnockoutService:
                 }
             )
 
-        self.db.commit()
-        if created == 0 and updated == 0 and existing_by_fifa:
-            message = f"{next_fase} ya existe ({len(existing_by_fifa)} partidos) y está al día"
-        elif updated and not created:
-            message = f"{next_fase}: {updated} partidos corregidos al cuadro FIFA"
-        else:
-            message = None
-        return {
-            "created": created,
-            "updated": updated,
-            "fase": next_fase,
-            "from_fase": from_fase,
-            "sync": sync_info,
-            "partidos": partidos,
-            "message": message,
-        }
+        return {"created": created, "updated": updated, "partidos": partidos}
 
     def _pairs_for_advance(self, from_fase: str, current: list) -> list[tuple[str, str]]:
         winner_fn = lambda m: m.classified_winner()
@@ -517,7 +592,7 @@ class KnockoutService:
         ko_data = load_ko_rounds_data()
         out["ko_calendario_disponible"] = sum(
             len((ko_data.get(f) or {}).get("partidos", []))
-            for f in (FASE_R16, FASE_QF, FASE_SF, FASE_FINAL)
+            for f in (FASE_R16, FASE_QF, FASE_SF, FASE_3RD, FASE_FINAL)
         )
         return out
 
@@ -566,7 +641,7 @@ def knockout_display_by_fifa_id() -> dict[str, dict]:
                 }
     except ValueError:
         pass
-    for fase in (FASE_R16, FASE_QF, FASE_SF, FASE_FINAL):
+    for fase in (FASE_R16, FASE_QF, FASE_SF, FASE_3RD, FASE_FINAL):
         for fx in (load_ko_rounds_data().get(fase) or {}).get("partidos", []):
             fid = fx.get("fifa_id")
             if fid:

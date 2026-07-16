@@ -17,6 +17,7 @@ const KNOCKOUT_PHASE_ORDER = [
   "Octavos de final",
   "Cuartos de final",
   "Semifinales",
+  "Tercer puesto",
   "Final",
 ];
 

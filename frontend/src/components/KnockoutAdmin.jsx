@@ -12,6 +12,7 @@ const FASES = [
   "Octavos de final",
   "Cuartos de final",
   "Semifinales",
+  "Tercer puesto",
   "Final",
 ];
 
@@ -33,8 +34,8 @@ const ADVANCE_FROM = [
   },
   {
     fromFase: "Semifinales",
-    label: "Publicar final",
-    hint: "Crea el partido final desde los ganadores de semifinales.",
+    label: "Publicar final y tercer puesto",
+    hint: "Crea la final (ganadores) y el partido por el tercer puesto (perdedores de semis).",
   },
 ];
 

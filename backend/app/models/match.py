@@ -84,3 +84,14 @@ class Match(Base):
         if self.penales_local is not None and self.penales_visitante is not None:
             return self.local if self.penales_local > self.penales_visitante else self.visitante
         return None
+
+    def classified_loser(self) -> str | None:
+        """Perdedor de la llave (va al partido de tercer puesto desde semis)."""
+        winner = self.classified_winner()
+        if winner is None:
+            return None
+        if winner == self.local:
+            return self.visitante
+        if winner == self.visitante:
+            return self.local
+        return None

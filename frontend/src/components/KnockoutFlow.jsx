@@ -69,10 +69,11 @@ function winnerName(m) {
 export default function KnockoutFlow({ knockout = [] }) {
   const phases = byPhase(knockout);
   const semifinals = phases["Semifinales"] || [];
+  const thirdPlace = phases["Tercer puesto"]?.[0];
   const finalMatch = phases["Final"]?.[0];
   const champion = finalMatch ? winnerName(finalMatch) : null;
 
-  if (!semifinals.length && !finalMatch) {
+  if (!semifinals.length && !finalMatch && !thirdPlace) {
     const r32live = (phases["Dieciseisavos de final"] || []).filter((m) => m.estado === "LIVE");
     if (r32live.length) {
       const m = r32live[0];
@@ -128,6 +129,19 @@ export default function KnockoutFlow({ knockout = [] }) {
                 minuto={sf2.minuto}
               />
             )}
+          </Column>
+        )}
+
+        {thirdPlace && (
+          <Column title="3er puesto">
+            <Tie
+              top={thirdPlace.local}
+              bottom={thirdPlace.visitante}
+              scoreTop={thirdPlace.goles_local}
+              scoreBottom={thirdPlace.goles_visitante}
+              live={thirdPlace.estado === "LIVE"}
+              minuto={thirdPlace.minuto}
+            />
           </Column>
         )}
 

@@ -245,6 +245,7 @@ class BackupService:
         # 3) Resultados oficiales de partidos (grupos + eliminatorias)
         by_fifa, by_codes = self._match_index()
         restored_results = 0
+        created_matches = 0
         for item in data.get("match_results", []):
             match = None
             fifa_id = item.get("fifa_id")
@@ -254,6 +255,22 @@ class BackupService:
                 cl, cv = team_code(item.get("local")), team_code(item.get("visitante"))
                 if cl and cv:
                     match = by_codes.get(frozenset((cl, cv)))
+            if match is None and fifa_id and item.get("local") and item.get("visitante"):
+                # Crea partidos de eliminatorias ausentes (p. ej. tras regenerar BD).
+                match = self.matches.create(
+                    fifa_id=str(fifa_id),
+                    grupo=None,
+                    fase=item.get("fase") or None,
+                    local=str(item["local"]),
+                    visitante=str(item["visitante"]),
+                    fecha=None,
+                    estado=MatchStatus.SCHEDULED,
+                )
+                by_fifa[str(fifa_id)] = match
+                cl, cv = team_code(match.local), team_code(match.visitante)
+                if cl and cv:
+                    by_codes[frozenset((cl, cv))] = match
+                created_matches += 1
             if match is None:
                 continue
             match.goles_local = int(item.get("goles_local", 0))
@@ -276,12 +293,16 @@ class BackupService:
                 match.penales_visitante = int(item["penales_visitante"])
             if item.get("ganador"):
                 match.ganador = str(item["ganador"])
+            if item.get("fase"):
+                match.fase = str(item["fase"])
             try:
                 match.estado = MatchStatus(item.get("estado", MatchStatus.FINISHED.value))
             except ValueError:
                 match.estado = MatchStatus.FINISHED
             restored_results += 1
         self.db.flush()
+        # Refresca índice tras crear partidos (predicciones posteriores).
+        by_fifa, by_codes = self._match_index()
 
         # 4) Predicciones de partidos (upsert por participante + partido)
         skipped_preds = 0
@@ -370,6 +391,7 @@ class BackupService:
             "usuarios_creados": created_users,
             "participantes_creados": created_participants,
             "resultados_restaurados": restored_results,
+            "partidos_creados": created_matches,
             "predicciones_restauradas": restored_preds,
             "posiciones_restauradas": restored_pos,
             "puntajes_restaurados": restored_scores,

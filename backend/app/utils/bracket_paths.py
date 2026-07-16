@@ -79,7 +79,9 @@ def knockout_slot_sort_key(fifa_id: str | None) -> tuple[int, int, str]:
     """Orden numérico KO-R32-2 antes que KO-R32-10 (no alfabético)."""
     if not fifa_id:
         return (99, 9999, "")
-    for rank, prefix in enumerate(("KO-R32-", "KO-R16-", "KO-QF-", "KO-SF-", "KO-F-")):
+    for rank, prefix in enumerate(
+        ("KO-R32-", "KO-R16-", "KO-QF-", "KO-SF-", "KO-3RD-", "KO-F-")
+    ):
         if fifa_id.startswith(prefix):
             try:
                 return (rank, int(fifa_id[len(prefix) :]), fifa_id)
@@ -150,6 +152,24 @@ def pair_winners_sf_to_final(matches: list, winner_fn) -> list[tuple[str, str]]:
     return pair_winners_by_slot_pairs(
         matches, winner_fn, "KO-SF-", load_sf_to_final_pairs(), "SF→Final"
     )
+
+
+def pair_losers_sf_to_third(matches: list, loser_fn) -> list[tuple[str, str]]:
+    """Empareja perdedores de semis para el partido de tercer puesto (orden KO-SF)."""
+    sorted_ms = sorted(
+        matches, key=lambda m: knockout_slot_sort_key(getattr(m, "fifa_id", None))
+    )
+    losers: list[str] = []
+    for m in sorted_ms:
+        loser = loser_fn(m)
+        if not loser:
+            raise ValueError(
+                f"Falta perdedor clasificado en {getattr(m, 'fifa_id', '?')}"
+            )
+        losers.append(loser)
+    if len(losers) < 2:
+        raise ValueError("Se necesitan 2 perdedores de semifinales para el tercer puesto")
+    return [(losers[0], losers[1])]
 
 
 def pair_winners_sequential(winners: list[str]) -> list[tuple[str, str]]:

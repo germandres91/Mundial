@@ -1,7 +1,7 @@
-/** Orden numérico de partidos KO-R32-1 … KO-R32-16 (no alfabético). */
-const KO_SLOT = /^KO-(R32|R16|QF|SF|F)-(\d+)$/;
+/** Orden numérico de partidos KO-R32-1 … KO-F-1 (no alfabético). */
+const KO_SLOT = /^KO-(R32|R16|QF|SF|3RD|F)-(\d+)$/;
 
-const ROUND_RANK = { R32: 0, R16: 1, QF: 2, SF: 3, F: 4 };
+const ROUND_RANK = { R32: 0, R16: 1, QF: 2, SF: 3, "3RD": 4, F: 5 };
 
 export function knockoutSlotKey(fifaId) {
   if (!fifaId) return [99, 9999, ""];
@@ -31,7 +31,8 @@ const PHASE_RANK = {
   "Octavos de final": 2,
   "Cuartos de final": 3,
   Semifinales: 4,
-  Final: 5,
+  "Tercer puesto": 5,
+  Final: 6,
 };
 
 export function sortMatchesForTable(matches) {
