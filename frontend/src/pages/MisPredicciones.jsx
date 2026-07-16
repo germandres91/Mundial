@@ -146,7 +146,13 @@ export default function MisPredicciones() {
   const [linking, setLinking] = useState(false);
 
   const matches = roundData?.matches ?? [];
-  const activeFase = roundData?.active_fase ?? null;
+  const activeFases = useMemo(() => {
+    if (Array.isArray(roundData?.active_fases) && roundData.active_fases.length) {
+      return roundData.active_fases;
+    }
+    return roundData?.active_fase ? [roundData.active_fase] : [];
+  }, [roundData]);
+  const activeSet = useMemo(() => new Set(activeFases), [activeFases]);
 
   useEffect(() => {
     if (user && !user.participant_id) {
@@ -167,13 +173,12 @@ export default function MisPredicciones() {
 
   const sortedPhases = useMemo(() => {
     return Object.entries(byPhase).sort(([faseA], [faseB]) => {
-      if (activeFase) {
-        if (faseA === activeFase) return -1;
-        if (faseB === activeFase) return 1;
-      }
+      const aOpen = activeSet.has(faseA);
+      const bOpen = activeSet.has(faseB);
+      if (aOpen !== bOpen) return aOpen ? -1 : 1;
       return phaseSortIndex(faseA) - phaseSortIndex(faseB);
     });
-  }, [byPhase, activeFase]);
+  }, [byPhase, activeSet]);
 
   const pendingActive = useMemo(
     () => matches.filter((m) => m.is_active_round && m.can_submit && !m.submitted),
@@ -206,15 +211,16 @@ export default function MisPredicciones() {
         </p>
       </div>
 
-      {activeFase && pendingActive.length > 0 && (
+      {activeFases.length > 0 && pendingActive.length > 0 && (
         <div className="rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-4 py-3">
           <p className="font-semibold text-emerald-700 dark:text-emerald-300">
-            Ronda abierta: {activeFase}
+            Rondas abiertas: {activeFases.join(" · ")}
           </p>
           <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
             Tienes {pendingActive.length}{" "}
             {pendingActive.length === 1 ? "partido pendiente" : "partidos pendientes"} por
-            enviar. Ingresa tu marcador antes de que comience cada partido.
+            enviar (incluye tercer puesto y final si están publicados). Ingresa tu marcador
+            antes de que comience cada partido.
           </p>
         </div>
       )}
@@ -233,7 +239,7 @@ export default function MisPredicciones() {
           <section key={fase} className="space-y-3">
             <h2 className="text-lg font-semibold">
               {fase}
-              {fase === activeFase && (
+              {activeSet.has(fase) && (
                 <span className="ml-2 rounded-full bg-emerald-500/20 px-2 py-0.5 text-xs font-medium text-emerald-600 dark:text-emerald-300">
                   Abierta
                 </span>

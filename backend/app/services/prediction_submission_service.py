@@ -120,14 +120,19 @@ class PredictionSubmissionService:
         )
 
     def active_submission_phase(self) -> str | None:
-        """Ronda más avanzada con partidos aún programados (abierta a predicciones)."""
-        active: str | None = None
+        """Primera ronda abierta (la más temprana con partidos programados)."""
+        phases = self.active_submission_phases()
+        return phases[0] if phases else None
+
+    def active_submission_phases(self) -> list[str]:
+        """Todas las rondas con partidos aún programados (abiertas a predicciones)."""
+        active: list[str] = []
         for fase in KNOCKOUT_FASES:
             ms = self.matches.list(fase=fase)
             if not ms:
                 continue
             if any(m.estado == MatchStatus.SCHEDULED for m in ms):
-                active = fase
+                active.append(fase)
         return active
 
 
@@ -317,7 +322,9 @@ class PredictionSubmissionService:
 
     def open_matches_payload(self, user: User, participant_id: int | None = None) -> dict:
         pid = self._resolve_participant_id(user, participant_id)
-        active_fase = self.active_submission_phase()
+        active_fases = self.active_submission_phases()
+        active_fase = active_fases[0] if active_fases else None
+        active_set = set(active_fases)
 
         knockout = sorted(
             [m for m in self.matches.list() if self._is_knockout_match(m.fase)],
@@ -365,7 +372,7 @@ class PredictionSubmissionService:
 
                     "can_submit": can_submit,
 
-                    "is_active_round": m.fase == active_fase and m.estado == MatchStatus.SCHEDULED,
+                    "is_active_round": m.fase in active_set and m.estado == MatchStatus.SCHEDULED,
 
                     "submitted": pred is not None and pred.locked_at is not None,
 
@@ -379,7 +386,11 @@ class PredictionSubmissionService:
 
             )
 
-        return {"active_fase": active_fase, "matches": out}
+        return {
+            "active_fase": active_fase,
+            "active_fases": active_fases,
+            "matches": out,
+        }
 
     @staticmethod
     def _sort_knockout_matches(matches: list) -> list:

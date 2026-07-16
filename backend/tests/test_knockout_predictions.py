@@ -615,3 +615,79 @@ def test_publish_third_when_final_already_exists(db):
     assert {third.local, third.visitante} == {"Francia", "Inglaterra"}
 
 
+
+
+
+def test_mis_predicciones_opens_third_and_final(db, sample_participants):
+
+    """Tercer puesto y Final aparecen juntos como rondas abiertas para llenar."""
+
+    from app.models.match import Match
+
+    from app.services.knockout_service import FASE_3RD, FASE_FINAL
+
+
+
+    p = sample_participants[0]
+
+    user = _participant_user(db, p)
+
+    db.add(
+
+        Match(
+
+            fifa_id="KO-3RD-1",
+
+            fase=FASE_3RD,
+
+            local="Francia",
+
+            visitante="Inglaterra",
+
+            estado=MatchStatus.SCHEDULED,
+
+        )
+
+    )
+
+    db.add(
+
+        Match(
+
+            fifa_id="KO-F-1",
+
+            fase=FASE_FINAL,
+
+            local="España",
+
+            visitante="Argentina",
+
+            estado=MatchStatus.SCHEDULED,
+
+        )
+
+    )
+
+    db.commit()
+
+
+
+    payload = PredictionSubmissionService(db).open_matches_payload(user)
+
+    assert payload["active_fases"] == [FASE_3RD, FASE_FINAL]
+
+    assert payload["active_fase"] == FASE_3RD
+
+    third = next(m for m in payload["matches"] if m["fifa_id"] == "KO-3RD-1")
+
+    final = next(m for m in payload["matches"] if m["fifa_id"] == "KO-F-1")
+
+    assert third["can_submit"] is True
+
+    assert third["is_active_round"] is True
+
+    assert final["can_submit"] is True
+
+    assert final["is_active_round"] is True
+
+
